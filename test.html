@@ -1,1726 +1,1985 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>AI Outbound Lead Console</title>
-        <!-- Google Fonts: Outfit & Inter -->
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        <style>
-            :root {
-                --bg-primary: #f8fafc;      /* Clean Off-white Slate */
-                --bg-secondary: #f1f5f9;    /* Light Slate Grey */
-                --card-bg: #ffffff;          /* Pure White Cards */
-                --border-color: #cbd5e1;     /* Sharp Slate Grey Border */
-                --border-light: #e2e8f0;     /* Soft Light Grey Border */
-                --text-primary: #0f172a;     /* Deep Slate/Near Black text */
-                --text-muted: #64748b;       /* Slate Grey Muted text */
-                --primary: #2563eb;          /* Enterprise Blue */
-                --success: #10b981;          /* Flat Forest Green */
-                --danger: #ef4444;           /* Flat Crimson Red */
-                --primary-hover: #1d4ed8;
-                --success-hover: #059669;
-                --danger-hover: #dc2626;
-            }
 
-            * { 
-                box-sizing: border-box; 
-                margin: 0; 
-                padding: 0; 
-            }
+<head>
+    <title>AI Outbound Lead Console</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            /* Clean Off-white Slate */
+            --bg-secondary: #f1f5f9;
+            /* Light Slate Grey */
+            --card-bg: #ffffff;
+            /* Pure White Cards */
+            --border-color: #cbd5e1;
+            /* Sharp Slate Grey Border */
+            --border-light: #e2e8f0;
+            /* Soft Light Grey Border */
+            --text-primary: #0f172a;
+            /* Deep Slate/Near Black text */
+            --text-muted: #64748b;
+            /* Slate Grey Muted text */
+            --primary: #2563eb;
+            /* Enterprise Blue */
+            --success: #10b981;
+            /* Flat Forest Green */
+            --danger: #ef4444;
+            /* Flat Crimson Red */
+            --primary-hover: #1d4ed8;
+            --success-hover: #059669;
+            --danger-hover: #dc2626;
+        }
 
-            body {
-                font-family: 'Inter', sans-serif;
-                background-color: var(--bg-primary);
-                background-image: 
-                    radial-gradient(circle at 50% 0%, #f1f5f9 0%, #f8fafc 100%);
-                background-attachment: fixed;
-                color: var(--text-primary);
-                min-height: 100vh;
-                padding: 30px 20px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                position: relative;
-                overflow-x: hidden;
-            }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-            /* Locked state during Antigravity physics sandbox to prevent scroll glitching */
-            body.antigravity-mode {
-                overflow: hidden;
-                height: 100vh;
-                width: 100vw;
-            }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            background-image:
+                radial-gradient(circle at 50% 0%, #f1f5f9 0%, #f8fafc 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+        }
 
-            /* Clean light grid overlay */
-            body::before {
-                content: '';
-                position: absolute;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background-image: 
-                    linear-gradient(rgba(100, 116, 139, 0.03) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(100, 116, 139, 0.03) 1px, transparent 1px);
-                background-size: 30px 30px;
-                pointer-events: none;
-                z-index: 0;
-            }
+        /* Locked state during Antigravity physics sandbox to prevent scroll glitching */
+        body.antigravity-mode {
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
 
-            #bg-canvas {
-                position: fixed;
-                top: 0; left: 0;
-                width: 100%; height: 100%;
-                z-index: 1;
-                pointer-events: auto;
-            }
+        /* Clean light grid overlay */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(100, 116, 139, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 116, 139, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: 0;
+        }
 
-            .app-container {
-                width: 100%;
-                max-width: 1200px;
-                z-index: 10;
-                position: relative;
-                pointer-events: none;
-            }
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: auto;
+        }
 
-            .app-container * {
-                pointer-events: auto;
-            }
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            z-index: 10;
+            position: relative;
+            pointer-events: none;
+        }
 
-            /* Flat Enterprise Header */
+        .app-container * {
+            pointer-events: auto;
+        }
+
+        /* Flat Enterprise Header */
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px 28px;
+        }
+
+        @media (max-width: 768px) {
             .header-main {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 25px;
-                padding: 20px 28px;
-            }
-            @media (max-width: 768px) {
-                .header-main {
-                    flex-direction: column;
-                    gap: 15px;
-                    text-align: center;
-                }
-            }
-            .header-branding {
-                display: flex;
                 flex-direction: column;
-            }
-            .glow-text {
-                font-family: 'Outfit', sans-serif;
-                font-size: 1.8rem;
-                font-weight: 800;
-                letter-spacing: -0.01em;
-                color: var(--text-primary);
-            }
-            .subtitle {
-                color: var(--text-muted);
-                font-size: 0.9rem;
-                margin-top: 3px;
-            }
-            .cyber-badge {
-                align-self: flex-start;
-                background: #f1f5f9;
-                border: 1px solid var(--border-color);
-                color: var(--text-muted);
-                font-family: monospace;
-                font-size: 0.65rem;
-                padding: 2px 7px;
-                border-radius: 3px;
-                letter-spacing: 0.05em;
-                margin-bottom: 5px;
-                font-weight: 600;
-            }
-            @media (max-width: 768px) {
-                .cyber-badge {
-                    align-self: center;
-                }
-            }
-
-            /* Antigravity Sandbox Engine Toggle button */
-            .sandbox-control {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
-                gap: 5px;
-            }
-            @media (max-width: 768px) {
-                .sandbox-control {
-                    align-items: center;
-                }
-            }
-            .sandbox-label {
-                font-family: monospace;
-                font-size: 0.7rem;
-                color: var(--text-muted);
-                letter-spacing: 0.05em;
-                font-weight: 600;
-            }
-            .sandbox-btn {
-                background: #ffffff;
-                border: 1px solid var(--border-color);
-                color: var(--text-primary);
-                padding: 8px 18px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-family: 'Outfit', sans-serif;
-                font-weight: 700;
-                font-size: 0.8rem;
-                letter-spacing: 0.03em;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            }
-            .sandbox-btn:hover {
-                background: var(--bg-secondary);
-                border-color: #94a3b8;
-            }
-            .sandbox-btn.active {
-                background: #eff6ff;
-                border-color: var(--primary);
-                color: var(--primary);
-                box-shadow: 0 0 10px rgba(37, 99, 235, 0.1);
-            }
-            .sandbox-indicator {
-                width: 7px;
-                height: 7px;
-                border-radius: 50%;
-                background-color: var(--text-muted);
-                transition: all 0.3s ease;
-            }
-            .sandbox-btn.active .sandbox-indicator {
-                background-color: var(--primary);
-                box-shadow: 0 0 8px var(--primary);
-                animation: pulse-blue 1.5s infinite alternate;
-            }
-            @keyframes pulse-blue {
-                0% { transform: scale(0.85); opacity: 0.6; }
-                100% { transform: scale(1.15); opacity: 1; }
-            }
-
-            /* Grid Layout */
-            .grid-layout {
-                display: grid;
-                grid-template-columns: 1fr 1.15fr;
-                gap: 20px;
-                align-items: start;
-            }
-            @media (max-width: 992px) {
-                .grid-layout {
-                    grid-template-columns: 1fr;
-                }
-            }
-
-            .column {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            /* Flat Enterprise Cards */
-            .card {
-                background: var(--card-bg);
-                border: 1px solid var(--border-color);
-                border-radius: 8px;
-                padding: 20px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
-                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
-                position: relative;
-                user-select: none;
-            }
-            .card:hover:not(.floating-physics) {
-                border-color: #94a3b8;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-            }
-            .card.dragging {
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
-                transform: scale(1.015) !important;
-                border-color: var(--primary) !important;
-                z-index: 1000 !important;
-            }
-
-            .card-title {
-                font-family: 'Outfit', sans-serif;
-                font-size: 0.88rem;
-                font-weight: 700;
-                color: var(--text-primary);
-                margin-bottom: 15px;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                border-bottom: 1px solid var(--border-light);
-                padding-bottom: 8px;
-            }
-            .title-icon {
-                color: var(--text-muted);
-                width: 16px;
-                height: 16px;
-            }
-
-            /* AI Core Minimalist Logo / Avatar styling */
-            .avatar-card {
+                gap: 15px;
                 text-align: center;
-                padding: 24px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                background-color: var(--card-bg);
             }
-            .logo-container {
-                width: 100px;
-                height: 100px;
-                margin-bottom: 10px;
-                position: relative;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            .orbital-system {
-                width: 100%;
-                height: 100%;
-                transform-style: preserve-3d;
-                perspective: 1000px;
-            }
-            .orbital-svg {
-                width: 100%;
-                height: 100%;
-            }
-            .orbit {
-                fill: none;
-                stroke-width: 0.8;
-                transform-origin: 50px 50px;
-            }
-            .orbit-1 {
-                transform: rotateX(65deg) rotateY(15deg);
-                stroke: rgba(100, 116, 139, 0.2);
-                animation: spin-orbit 10s linear infinite;
-            }
-            .orbit-2 {
-                transform: rotateX(65deg) rotateY(-35deg) rotateZ(30deg);
-                stroke: rgba(100, 116, 139, 0.2);
-                animation: spin-orbit 7s linear infinite reverse;
-            }
-            .orbit-3 {
-                transform: rotateX(25deg) rotateY(75deg);
-                stroke: rgba(100, 116, 139, 0.15);
-                animation: spin-orbit 14s linear infinite;
-            }
-            .core-outer {
-                fill: rgba(71, 85, 105, 0.02);
-                stroke: rgba(71, 85, 105, 0.15);
-                stroke-width: 0.5;
-                animation: breathing 3s ease-in-out infinite;
-                transform-origin: 50px 50px;
-            }
-            .core-inner {
-                fill: url(#core-gradient);
-                filter: url(#glow-purple);
-                transition: all 0.3s ease;
-                transform-origin: 50px 50px;
-            }
-            .avatar-title {
-                font-family: 'Outfit', sans-serif;
-                font-weight: 700;
-                font-size: 0.9rem;
-                letter-spacing: 0.03em;
-                color: var(--text-primary);
-                margin-top: 8px;
-            }
+        }
 
-            /* Sound waves audio visualizer indicators */
-            .soundwaves {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                gap: 3px;
-                height: 18px;
-                margin-top: 10px;
-            }
-            .wave-bar {
-                width: 3px;
-                height: 4px;
-                background: var(--text-muted);
-                border-radius: 2px;
-                transition: all 0.2s ease;
-                animation: wave-quiet 1.5s ease-in-out infinite;
-            }
-            .wave-bar:nth-child(2) { animation-delay: 0.15s; }
-            .wave-bar:nth-child(3) { animation-delay: 0.3s; }
-            .wave-bar:nth-child(4) { animation-delay: 0.45s; }
-            .wave-bar:nth-child(5) { animation-delay: 0.6s; }
-            .wave-bar:nth-child(6) { animation-delay: 0.75s; }
-            .wave-bar:nth-child(7) { animation-delay: 0.9s; }
+        .header-branding {
+            display: flex;
+            flex-direction: column;
+        }
 
-            /* Audio active states visual animations */
-            .speaking-wave-bar {
-                animation: wave-speak 0.4s ease-in-out infinite alternate !important;
-            }
-            .listening-wave-bar {
-                animation: wave-listen 0.8s ease-in-out infinite alternate !important;
-            }
-            .speaking-core {
-                animation: core-speak 0.3s ease-in-out infinite alternate !important;
-            }
-            .listening-core {
-                animation: core-listen 1.0s ease-in-out infinite alternate !important;
-            }
+        .glow-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+        }
 
-            @keyframes spin-orbit {
-                0% { transform: rotateX(65deg) rotateY(15deg) rotateZ(0deg); }
-                100% { transform: rotateX(65deg) rotateY(15deg) rotateZ(360deg); }
-            }
-            @keyframes breathing {
-                0%, 100% { r: 13px; fill: rgba(100, 116, 139, 0.02); }
-                50% { r: 16px; fill: rgba(100, 116, 139, 0.05); }
-            }
-            @keyframes core-speak {
-                0% { r: 9px; fill: #2563eb; }
-                100% { r: 12px; fill: #3b82f6; }
-            }
-            @keyframes core-listen {
-                0% { r: 9px; fill: #64748b; }
-                100% { r: 10.5px; fill: #475569; }
-            }
-            @keyframes wave-quiet {
-                0%, 100% { height: 4px; background: rgba(100, 116, 139, 0.3); }
-                50% { height: 7px; background: rgba(100, 116, 139, 0.5); }
-            }
-            @keyframes wave-listen {
-                0% { height: 4px; background: #64748b; }
-                100% { height: 12px; background: #475569; }
-            }
-            @keyframes wave-speak {
-                0% { height: 3px; background: #3b82f6; }
-                100% { height: 18px; background: #2563eb; }
-            }
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 3px;
+        }
 
-            /* Clean flat button styling */
-            .controls { 
-                display: flex; 
-                gap: 12px; 
-            }
-            .btn {
-                flex: 1;
-                padding: 10px 18px; 
-                border: 1px solid transparent;
-                border-radius: 6px;
-                cursor: pointer; 
-                font-family: 'Outfit', sans-serif;
-                font-size: 0.9rem;
-                font-weight: 700;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 6px;
-                transition: all 0.15s ease;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            }
-            .btn-success {
-                background: var(--success);
-                border-color: #059669;
-                color: #ffffff;
-            }
-            .btn-success:hover:not(:disabled) {
-                background: var(--success-hover);
-            }
-            .btn-danger {
-                background: var(--danger);
-                border-color: #dc2626;
-                color: #ffffff;
-            }
-            .btn-danger:hover:not(:disabled) {
-                background: var(--danger-hover);
-            }
-            .btn-primary {
-                background: #ffffff;
-                border-color: var(--border-color);
-                color: var(--text-primary);
-            }
-            .btn-primary:hover:not(:disabled) {
-                background: var(--bg-secondary);
-                border-color: #94a3b8;
-            }
-            .btn:disabled { 
-                opacity: 0.35; 
-                cursor: not-allowed; 
-                box-shadow: none !important;
-            }
+        .cyber-badge {
+            align-self: flex-start;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            border-radius: 3px;
+            letter-spacing: 0.05em;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
 
-            /* System Status Lists */
-            .status-list { 
-                display: flex; 
-                flex-direction: column;
-                gap: 8px; 
-            }
-            .status-row {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                background-color: var(--bg-primary);
-                border: 1px solid var(--border-light);
-                padding: 10px 14px;
-                border-radius: 6px;
-                font-size: 0.85rem;
-                transition: all 0.15s ease;
-            }
-            .status-row:hover {
-                background-color: var(--bg-secondary);
-                border-color: var(--border-color);
-            }
-            .status-label {
-                color: var(--text-muted);
-                font-weight: 500;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .status-icon {
-                color: #64748b;
-                width: 15px;
-                height: 15px;
-                vertical-align: middle;
-            }
-            .status-value {
-                font-weight: 600;
-                color: var(--text-primary);
-                display: flex;
-                align-items: center;
-                gap: 6px;
-            }
-            .status-dot {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background-color: #64748b;
-                display: inline-block;
-            }
-            .status-dot.active {
-                background-color: var(--success);
-                box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
-                animation: blink-active 1.5s infinite alternate;
-            }
-            .status-dot.warn {
-                background-color: #f59e0b;
-                box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
-                animation: blink-warn 0.8s infinite alternate;
-            }
-            @keyframes blink-active {
-                0% { transform: scale(0.9); opacity: 0.7; }
-                100% { transform: scale(1.15); opacity: 1; }
-            }
-            @keyframes blink-warn {
-                0% { transform: scale(0.85); opacity: 0.6; }
-                100% { transform: scale(1.2); opacity: 1; }
-            }
-
-            /* Live Transcript panel styling */
-            .chat-container {
-                display: flex;
-                flex-direction: column;
-                height: 440px;
-            }
-            #messages {
-                flex: 1;
-                overflow-y: auto; 
-                padding: 15px;
-                background-color: #f8fafc;
-                border: 1px solid var(--border-light);
-                border-radius: 6px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                margin-bottom: 12px;
-                scroll-behavior: smooth;
-            }
-            .msg {
-                max-width: 85%;
-                padding: 10px 14px;
-                border-radius: 8px;
-                font-size: 0.85rem;
-                line-height: 1.4;
-                word-wrap: break-word;
-                border: 1px solid transparent;
-            }
-            .msg-bot {
-                align-self: flex-start;
-                background: #eff6ff;
-                border-color: #bfdbfe;
-                color: #1e3a8a;
-                border-top-left-radius: 2px;
-            }
-            .msg-user {
-                align-self: flex-end;
-                background: #f1f5f9;
-                border-color: var(--border-color);
-                color: var(--text-primary);
-                border-top-right-radius: 2px;
-            }
-            .msg-meta {
+        @media (max-width: 768px) {
+            .cyber-badge {
                 align-self: center;
-                background-color: #ffffff;
-                border: 1px solid var(--border-light);
-                color: var(--text-muted);
-                font-size: 0.72rem;
-                padding: 4px 10px;
-                border-radius: 12px;
-                font-family: monospace;
-                font-weight: 600;
             }
-            .input-area {
-                display: flex;
-                gap: 8px;
+        }
+
+        /* Antigravity Sandbox Engine Toggle button */
+        .sandbox-control {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .sandbox-control {
+                align-items: center;
             }
-            .input-area input {
-                flex: 1;
-                background-color: #ffffff;
-                border: 1px solid var(--border-color);
-                border-radius: 6px;
-                padding: 10px 14px;
-                color: var(--text-primary);
-                font-family: 'Inter', sans-serif;
-                font-size: 0.88rem;
-                transition: all 0.2s ease;
-            }
-            .input-area input:focus {
-                border-color: var(--primary);
-                outline: none;
-                box-shadow: 0 0 5px rgba(37, 99, 235, 0.1);
+        }
+
+        .sandbox-label {
+            font-family: monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .sandbox-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .sandbox-btn:hover {
+            background: var(--bg-secondary);
+            border-color: #94a3b8;
+        }
+
+        .sandbox-btn.active {
+            background: #eff6ff;
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.1);
+        }
+
+        .sandbox-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .sandbox-btn.active .sandbox-indicator {
+            background-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            animation: pulse-blue 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-blue {
+            0% {
+                transform: scale(0.85);
+                opacity: 0.6;
             }
 
-            /* Playback and audio controls */
-            .slider-group {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-                margin-top: 8px;
-            }
-            .slider-header {
-                display: flex;
-                justify-content: space-between;
-                font-size: 0.78rem;
-                color: var(--text-muted);
-                font-weight: 600;
-            }
-            .slider-bar {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            input[type="range"] {
-                flex: 1;
-                -webkit-appearance: none;
-                height: 5px;
-                background-color: var(--border-light);
-                border-radius: 10px;
-                outline: none;
-            }
-            input[type="range"]::-webkit-slider-thumb {
-                -webkit-appearance: none;
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                background-color: var(--primary);
-                cursor: pointer;
-                transition: all 0.15s ease;
-            }
-            input[type="range"]::-webkit-slider-thumb:hover {
+            100% {
                 transform: scale(1.15);
+                opacity: 1;
             }
-            audio {
-                width: 100%;
-                height: 34px;
-                border-radius: 6px;
-                background-color: #f1f5f9;
-                border: 1px solid var(--border-color);
+        }
+
+        /* Grid Layout */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.15fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 992px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Flat Enterprise Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            user-select: none;
+        }
+
+        .card:hover:not(.floating-physics) {
+            border-color: #94a3b8;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .card.dragging {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+            transform: scale(1.015) !important;
+            border-color: var(--primary) !important;
+            z-index: 1000 !important;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 8px;
+        }
+
+        .title-icon {
+            color: var(--text-muted);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* AI Core Minimalist Logo / Avatar styling */
+        .avatar-card {
+            text-align: center;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--card-bg);
+        }
+
+        .logo-container {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 10px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .orbital-system {
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .orbital-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .orbit {
+            fill: none;
+            stroke-width: 0.8;
+            transform-origin: 50px 50px;
+        }
+
+        .orbit-1 {
+            transform: rotateX(65deg) rotateY(15deg);
+            stroke: rgba(100, 116, 139, 0.2);
+            animation: spin-orbit 10s linear infinite;
+        }
+
+        .orbit-2 {
+            transform: rotateX(65deg) rotateY(-35deg) rotateZ(30deg);
+            stroke: rgba(100, 116, 139, 0.2);
+            animation: spin-orbit 7s linear infinite reverse;
+        }
+
+        .orbit-3 {
+            transform: rotateX(25deg) rotateY(75deg);
+            stroke: rgba(100, 116, 139, 0.15);
+            animation: spin-orbit 14s linear infinite;
+        }
+
+        .core-outer {
+            fill: rgba(71, 85, 105, 0.02);
+            stroke: rgba(71, 85, 105, 0.15);
+            stroke-width: 0.5;
+            animation: breathing 3s ease-in-out infinite;
+            transform-origin: 50px 50px;
+        }
+
+        .core-inner {
+            fill: url(#core-gradient);
+            filter: url(#glow-purple);
+            transition: all 0.3s ease;
+            transform-origin: 50px 50px;
+        }
+
+        .avatar-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.03em;
+            color: var(--text-primary);
+            margin-top: 8px;
+        }
+
+        /* Sound waves audio visualizer indicators */
+        .soundwaves {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            height: 18px;
+            margin-top: 10px;
+        }
+
+        .wave-bar {
+            width: 3px;
+            height: 4px;
+            background: var(--text-muted);
+            border-radius: 2px;
+            transition: all 0.2s ease;
+            animation: wave-quiet 1.5s ease-in-out infinite;
+        }
+
+        .wave-bar:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .wave-bar:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .wave-bar:nth-child(4) {
+            animation-delay: 0.45s;
+        }
+
+        .wave-bar:nth-child(5) {
+            animation-delay: 0.6s;
+        }
+
+        .wave-bar:nth-child(6) {
+            animation-delay: 0.75s;
+        }
+
+        .wave-bar:nth-child(7) {
+            animation-delay: 0.9s;
+        }
+
+        /* Audio active states visual animations */
+        .speaking-wave-bar {
+            animation: wave-speak 0.4s ease-in-out infinite alternate !important;
+        }
+
+        .listening-wave-bar {
+            animation: wave-listen 0.8s ease-in-out infinite alternate !important;
+        }
+
+        .speaking-core {
+            animation: core-speak 0.3s ease-in-out infinite alternate !important;
+        }
+
+        .listening-core {
+            animation: core-listen 1.0s ease-in-out infinite alternate !important;
+        }
+
+        @keyframes spin-orbit {
+            0% {
+                transform: rotateX(65deg) rotateY(15deg) rotateZ(0deg);
             }
 
-            /* Medicare Campaign Script Simulator */
-            .sim-grid-layout {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 16px;
+            100% {
+                transform: rotateX(65deg) rotateY(15deg) rotateZ(360deg);
             }
-            @media (max-width: 1100px) {
-                .sim-grid-layout {
-                    grid-template-columns: repeat(2, 1fr);
-                }
+        }
+
+        @keyframes breathing {
+
+            0%,
+            100% {
+                r: 13px;
+                fill: rgba(100, 116, 139, 0.02);
             }
-            @media (max-width: 600px) {
-                .sim-grid-layout {
-                    grid-template-columns: 1fr;
-                }
+
+            50% {
+                r: 16px;
+                fill: rgba(100, 116, 139, 0.05);
             }
-            .sim-section {
-                background: #f8fafc;
-                border: 1px solid var(--border-light);
-                border-radius: 8px;
-                padding: 12px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
+        }
+
+        @keyframes core-speak {
+            0% {
+                r: 9px;
+                fill: #2563eb;
             }
-            .sim-section-header {
-                font-family: 'Outfit', sans-serif;
-                font-size: 0.75rem;
-                font-weight: 700;
-                color: var(--text-primary);
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-                border-bottom: 1px solid var(--border-light);
-                padding-bottom: 6px;
+
+            100% {
+                r: 12px;
+                fill: #3b82f6;
             }
-            .sim-section-header::before {
-                content: '';
-                display: inline-block;
-                width: 4px;
+        }
+
+        @keyframes core-listen {
+            0% {
+                r: 9px;
+                fill: #64748b;
+            }
+
+            100% {
+                r: 10.5px;
+                fill: #475569;
+            }
+        }
+
+        @keyframes wave-quiet {
+
+            0%,
+            100% {
                 height: 4px;
-                background: var(--text-muted);
-                border-radius: 50%;
-            }
-            .sim-grid {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-            .sim-row {
-                background-color: #ffffff;
-                border: 1px solid var(--border-light);
-                border-radius: 6px;
-                padding: 8px;
-                display: flex;
-                flex-direction: column;
-                gap: 5px;
-                transition: all 0.15s ease;
-            }
-            .sim-row:hover {
-                border-color: var(--border-color);
-                background-color: var(--bg-secondary);
-            }
-            .sim-label {
-                font-size: 0.72rem;
-                font-weight: 700;
-                color: var(--text-muted);
-                text-transform: capitalize;
-            }
-            .sim-buttons-container {
-                display: flex;
-                gap: 5px;
-                flex-wrap: wrap;
-            }
-            .sim-btn {
-                background-color: #ffffff;
-                border: 1px solid var(--border-color);
-                color: var(--text-primary);
-                font-family: 'Inter', sans-serif;
-                font-size: 0.7rem;
-                font-weight: 600;
-                padding: 4px 8px;
-                border-radius: 4px;
-                cursor: pointer;
-                transition: all 0.15s ease;
-            }
-            .sim-btn:hover {
-                background-color: var(--bg-secondary);
-                border-color: #94a3b8;
-            }
-            .sim-btn-danger {
-                background-color: #fff5f5;
-                border-color: #feb2b2;
-                color: #c53030;
-            }
-            .sim-btn-danger:hover {
-                background-color: #fed7d7;
-                border-color: #fc8181;
+                background: rgba(100, 116, 139, 0.3);
             }
 
-            /* Scrollbars */
-            ::-webkit-scrollbar {
-                width: 5px;
-                height: 5px;
+            50% {
+                height: 7px;
+                background: rgba(100, 116, 139, 0.5);
             }
-            ::-webkit-scrollbar-track {
-                background-color: transparent;
-            }
-            ::-webkit-scrollbar-thumb {
-                background-color: var(--border-color);
-                border-radius: 3px;
-            }
-            ::-webkit-scrollbar-thumb:hover {
-                background-color: #94a3b8;
-            }
-        </style>
-    </head>
-    <body>
-        <!-- Permanent Slate Grey Particles Canvas -->
-        <canvas id="bg-canvas"></canvas>
+        }
 
-        <div class="app-container">
-            <!-- Header panel -->
-            <header class="header-main card">
-                <div class="header-branding">
-                    <span class="cyber-badge">ENTERPRISE CONSOLE // LEAD QUALIFIER</span>
-                    <h1 class="glow-text">AI OUTBOUND AGENT CONSOLE</h1>
-                    <div class="subtitle">Medicare Advantage Outbound Lead Qualification System</div>
+        @keyframes wave-listen {
+            0% {
+                height: 4px;
+                background: #64748b;
+            }
+
+            100% {
+                height: 12px;
+                background: #475569;
+            }
+        }
+
+        @keyframes wave-speak {
+            0% {
+                height: 3px;
+                background: #3b82f6;
+            }
+
+            100% {
+                height: 18px;
+                background: #2563eb;
+            }
+        }
+
+        /* Clean flat button styling */
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 18px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-success {
+            background: var(--success);
+            border-color: #059669;
+            color: #ffffff;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: var(--success-hover);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border-color: #dc2626;
+            color: #ffffff;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: var(--danger-hover);
+        }
+
+        .btn-primary {
+            background: #ffffff;
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--bg-secondary);
+            border-color: #94a3b8;
+        }
+
+        .btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            box-shadow: none !important;
+        }
+
+        /* System Status Lists */
+        .status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: all 0.15s ease;
+        }
+
+        .status-row:hover {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-color);
+        }
+
+        .status-label {
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-icon {
+            color: #64748b;
+            width: 15px;
+            height: 15px;
+            vertical-align: middle;
+        }
+
+        .status-value {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #64748b;
+            display: inline-block;
+        }
+
+        .status-dot.active {
+            background-color: var(--success);
+            box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+            animation: blink-active 1.5s infinite alternate;
+        }
+
+        .status-dot.warn {
+            background-color: #f59e0b;
+            box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+            animation: blink-warn 0.8s infinite alternate;
+        }
+
+        @keyframes blink-active {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
+        }
+
+        @keyframes blink-warn {
+            0% {
+                transform: scale(0.85);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* Live Transcript panel styling */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 440px;
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f8fafc;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+            scroll-behavior: smooth;
+        }
+
+        .msg {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            border: 1px solid transparent;
+        }
+
+        .msg-bot {
+            align-self: flex-start;
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e3a8a;
+            border-top-left-radius: 2px;
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: #f1f5f9;
+            border-color: var(--border-color);
+            color: var(--text-primary);
+            border-top-right-radius: 2px;
+        }
+
+        .msg-meta {
+            align-self: center;
+            background-color: #ffffff;
+            border: 1px solid var(--border-light);
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-area input {
+            flex: 1;
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+        }
+
+        .input-area input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 5px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Playback and audio controls */
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .slider-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 5px;
+            background-color: var(--border-light);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        audio {
+            width: 100%;
+            height: 34px;
+            border-radius: 6px;
+            background-color: #f1f5f9;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Medicare Campaign Script Simulator */
+        .sim-grid-layout {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 1100px) {
+            .sim-grid-layout {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .sim-grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sim-section {
+            background: #f8fafc;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sim-section-header {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 6px;
+        }
+
+        .sim-section-header::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: var(--text-muted);
+            border-radius: 50%;
+        }
+
+        .sim-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sim-row {
+            background-color: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+
+        .sim-row:hover {
+            border-color: var(--border-color);
+            background-color: var(--bg-secondary);
+        }
+
+        .sim-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
+        .sim-buttons-container {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .sim-btn {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .sim-btn:hover {
+            background-color: var(--bg-secondary);
+            border-color: #94a3b8;
+        }
+
+        .sim-btn-danger {
+            background-color: #fff5f5;
+            border-color: #feb2b2;
+            color: #c53030;
+        }
+
+        .sim-btn-danger:hover {
+            background-color: #fed7d7;
+            border-color: #fc8181;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--border-color);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Permanent Slate Grey Particles Canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="app-container">
+        <!-- Header panel -->
+        <header class="header-main card">
+            <div class="header-branding">
+                <span class="cyber-badge">ENTERPRISE CONSOLE // LEAD QUALIFIER</span>
+                <h1 class="glow-text">AI OUTBOUND AGENT CONSOLE</h1>
+                <div class="subtitle">Medicare Advantage Outbound Lead Qualification System</div>
+            </div>
+            <div class="sandbox-control">
+                <span class="sandbox-label">Bali Tech</span>
+                <button id="sandboxToggle" class="sandbox-btn">
+                    <span class="sandbox-indicator"></span>
+                    <span class="sandbox-btn-text">OFFLINE</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="grid-layout">
+            <!-- Left Column -->
+            <div class="column">
+                <!-- AI Avatar Core Card -->
+                <div class="card avatar-card">
+                    <div class="logo-container">
+                        <div class="orbital-system">
+                            <svg viewBox="0 0 100 100" class="orbital-svg">
+                                <defs>
+                                    <radialGradient id="core-gradient" cx="50%" cy="50%" r="50%">
+                                        <stop offset="0%" stop-color="#f8fafc" />
+                                        <stop offset="60%" stop-color="#64748b" />
+                                        <stop offset="100%" stop-color="#334155" />
+                                    </radialGradient>
+                                    <filter id="glow-purple" x="-30%" y="-30%" width="160%" height="160%">
+                                        <feGaussianBlur stdDeviation="3" result="blur" />
+                                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                    </filter>
+                                </defs>
+                                <!-- Orbit Ring 1 -->
+                                <ellipse cx="50" cy="50" rx="42" ry="14" class="orbit orbit-1" />
+                                <!-- Orbit Ring 2 -->
+                                <ellipse cx="50" cy="50" rx="42" ry="14" class="orbit orbit-2" />
+                                <!-- Orbit Ring 3 -->
+                                <ellipse cx="50" cy="50" rx="42" ry="14" class="orbit orbit-3" />
+
+                                <!-- Central Core -->
+                                <circle cx="50" cy="50" r="16" class="core-outer" />
+                                <circle cx="50" cy="50" r="9" class="core-inner" id="ai-core" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="avatar-title">EMILY // Voice Agent</div>
+                    <div class="soundwaves">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
                 </div>
-                <div class="sandbox-control">
-                    <span class="sandbox-label">ANTIGRAVITY ENGINE</span>
-                    <button id="sandboxToggle" class="sandbox-btn">
-                        <span class="sandbox-indicator"></span>
-                        <span class="sandbox-btn-text">OFFLINE</span>
-                    </button>
-                </div>
-            </header>
 
-            <div class="grid-layout">
-                <!-- Left Column -->
-                <div class="column">
-                    <!-- AI Avatar Core Card -->
-                    <div class="card avatar-card">
-                        <div class="logo-container">
-                            <div class="orbital-system">
-                                <svg viewBox="0 0 100 100" class="orbital-svg">
-                                    <defs>
-                                        <radialGradient id="core-gradient" cx="50%" cy="50%" r="50%">
-                                            <stop offset="0%" stop-color="#f8fafc" />
-                                            <stop offset="60%" stop-color="#64748b" />
-                                            <stop offset="100%" stop-color="#334155" />
-                                        </radialGradient>
-                                        <filter id="glow-purple" x="-30%" y="-30%" width="160%" height="160%">
-                                            <feGaussianBlur stdDeviation="3" result="blur" />
-                                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                        </filter>
-                                    </defs>
-                                    <!-- Orbit Ring 1 -->
-                                    <ellipse cx="50" cy="50" rx="42" ry="14" class="orbit orbit-1" />
-                                    <!-- Orbit Ring 2 -->
-                                    <ellipse cx="50" cy="50" rx="42" ry="14" class="orbit orbit-2" />
-                                    <!-- Orbit Ring 3 -->
-                                    <ellipse cx="50" cy="50" rx="42" ry="14" class="orbit orbit-3" />
-                                    
-                                    <!-- Central Core -->
-                                    <circle cx="50" cy="50" r="16" class="core-outer" />
-                                    <circle cx="50" cy="50" r="9" class="core-inner" id="ai-core" />
+                <!-- Session Control Card -->
+                <div class="card">
+                    <div class="card-title">
+                        <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor"
+                                d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M9,9V15H11V9H9M13,9V15H15V9H13Z" />
+                        </svg>
+                        Session Controls
+                    </div>
+                    <div class="controls">
+                        <button id="startBtn" class="btn btn-success">
+                            <svg width="18" height="18" viewBox="0 0 24 24" style="margin-right:2px;">
+                                <path fill="currentColor"
+                                    d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z" />
+                            </svg>
+                            Start Call
+                        </button>
+                        <button id="stopBtn" class="btn btn-danger" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" style="margin-right:2px;">
+                                <path fill="currentColor"
+                                    d="M12,2C17.52,2 22,6.48 22,12C22,17.52 17.52,22 12,22C6.48,22 2,17.52 2,12C2,6.48 6.48,2 12,2M8.5,9.5V14.5H15.5V9.5H8.5Z" />
+                            </svg>
+                            Stop Call
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Status Card -->
+                <div class="card">
+                    <div class="card-title">
+                        <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor"
+                                d="M12,2C17.52,2 22,6.48 22,12C22,17.52 17.52,22 12,22C6.48,22 2,17.52 2,12C2,6.48 6.48,2 12,2M11,16H13V18H11V16M11,6H13V14H11V6Z" />
+                        </svg>
+                        System Status
+                    </div>
+                    <div class="status-list">
+                        <div class="status-row">
+                            <span class="status-label">
+                                <svg class="status-icon" viewBox="0 0 24 24">
+                                    <path fill="currentColor"
+                                        d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z" />
                                 </svg>
-                            </div>
+                                Microphone
+                            </span>
+                            <span class="status-value" id="micStatus"><span class="status-dot"></span> Inactive</span>
                         </div>
-                        <div class="avatar-title">EMILY // Voice Agent</div>
-                        <div class="soundwaves">
-                            <div class="wave-bar"></div>
-                            <div class="wave-bar"></div>
-                            <div class="wave-bar"></div>
-                            <div class="wave-bar"></div>
-                            <div class="wave-bar"></div>
-                            <div class="wave-bar"></div>
-                            <div class="wave-bar"></div>
+                        <div class="status-row">
+                            <span class="status-label">
+                                <svg class="status-icon" viewBox="0 0 24 24">
+                                    <path fill="currentColor"
+                                        d="M4 9h2v6H4zm3-2h2v10H7zm3 4h2v2h-2zm3-6h2v16h-2zm3 5h2v4h-2zm3-3h2v10h-2z" />
+                                </svg>
+                                STT (Offline Vosk)
+                            </span>
+                            <span class="status-value" id="sttStatus"><span class="status-dot"></span> Offline</span>
                         </div>
-                    </div>
-
-                    <!-- Session Control Card -->
-                    <div class="card">
-                        <div class="card-title">
-                            <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M9,9V15H11V9H9M13,9V15H15V9H13Z"/></svg>
-                            Session Controls
-                        </div>
-                        <div class="controls">
-                            <button id="startBtn" class="btn btn-success">
-                                <svg width="18" height="18" viewBox="0 0 24 24" style="margin-right:2px;"><path fill="currentColor" d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/></svg>
-                                Start Call
-                            </button>
-                            <button id="stopBtn" class="btn btn-danger" disabled>
-                                <svg width="18" height="18" viewBox="0 0 24 24" style="margin-right:2px;"><path fill="currentColor" d="M12,2C17.52,2 22,6.48 22,12C22,17.52 17.52,22 12,22C6.48,22 2,17.52 2,12C2,6.48 6.48,2 12,2M8.5,9.5V14.5H15.5V9.5H8.5Z"/></svg>
-                                Stop Call
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- System Status Card -->
-                    <div class="card">
-                        <div class="card-title">
-                            <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12,2C17.52,2 22,6.48 22,12C22,17.52 17.52,22 12,22C6.48,22 2,17.52 2,12C2,6.48 6.48,2 12,2M11,16H13V18H11V16M11,6H13V14H11V6Z"/></svg>
-                            System Status
-                        </div>
-                        <div class="status-list">
-                            <div class="status-row">
-                                <span class="status-label">
-                                    <svg class="status-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/></svg>
-                                    Microphone
-                                </span>
-                                <span class="status-value" id="micStatus"><span class="status-dot"></span> Inactive</span>
-                            </div>
-                            <div class="status-row">
-                                <span class="status-label">
-                                    <svg class="status-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M4 9h2v6H4zm3-2h2v10H7zm3 4h2v2h-2zm3-6h2v16h-2zm3 5h2v4h-2zm3-3h2v10h-2z"/></svg>
-                                    STT (Offline Vosk)
-                                </span>
-                                <span class="status-value" id="sttStatus"><span class="status-dot"></span> Offline</span>
-                            </div>
-                            <div class="status-row">
-                                <span class="status-label">
-                                    <svg class="status-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.3 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/></svg>
-                                    TTS (Edge-TTS Guy)
-                                </span>
-                                <span class="status-value" id="ttsStatus"><span class="status-dot"></span> Offline</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column -->
-                <div class="column">
-                    <!-- Chat panel -->
-                    <div class="card chat-container">
-                        <div class="card-title">
-                            <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M9,22A1,1 0 0,1 8,21V18H4A2,2 0 0,1 2,16V4C2,2.89 2.9,2 4,2H20A2,2 0 0,1 22,4V16A2,2 0 0,1 20,18H13.9L10.3,21.6C10.1,21.8 9.8,22 9,22M10,16H20V4H4V16H10M6,7H18V9H6V7M6,11H14V13H6V11Z"/></svg>
-                            Live Call Transcript
-                        </div>
-                        <div id="messages"></div>
-                        <div class="input-area">
-                            <input type="text" id="userMsg" placeholder="Type message to bot...">
-                            <button id="sendBtn" class="btn btn-primary" style="flex: 0 0 auto; padding: 10px 18px;">
-                                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Audio controls -->
-                    <div class="card">
-                        <div class="card-title">
-                            <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/></svg>
-                            Voice & Playback Controls
-                        </div>
-                        <div class="slider-group">
-                            <div class="slider-header">
-                                <span>Speech Speed</span>
-                                <span id="speedValue">1.2x</span>
-                            </div>
-                            <div class="slider-bar">
-                                <input type="range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.2">
-                            </div>
-                        </div>
-                        <div style="margin-top: 15px;">
-                            <div class="slider-header" style="margin-bottom: 8px;">
-                                <span>Bot Audio Player (Auto-plays)</span>
-                            </div>
-                            <audio id="ttsPlayer" controls></audio>
+                        <div class="status-row">
+                            <span class="status-label">
+                                <svg class="status-icon" viewBox="0 0 24 24">
+                                    <path fill="currentColor"
+                                        d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.3 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z" />
+                                </svg>
+                                TTS (Edge-TTS Guy)
+                            </span>
+                            <span class="status-value" id="ttsStatus"><span class="status-dot"></span> Offline</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Full-width Campaign Script Simulator Panel -->
-            <div class="card" style="margin-top: 25px;">
-                <div class="card-title">
-                    <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.1 3.89,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19M17,12H7V10H17V12M17,16H7V14H17V16M13,8H7V6H13V8Z"/></svg>
-                    Medicare Script Simulation Sandbox
+            <!-- Right Column -->
+            <div class="column">
+                <!-- Chat panel -->
+                <div class="card chat-container">
+                    <div class="card-title">
+                        <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor"
+                                d="M9,22A1,1 0 0,1 8,21V18H4A2,2 0 0,1 2,16V4C2,2.89 2.9,2 4,2H20A2,2 0 0,1 22,4V16A2,2 0 0,1 20,18H13.9L10.3,21.6C10.1,21.8 9.8,22 9,22M10,16H20V4H4V16H10M6,7H18V9H6V7M6,11H14V13H6V11Z" />
+                        </svg>
+                        Live Call Transcript
+                    </div>
+                    <div id="messages"></div>
+                    <div class="input-area">
+                        <input type="text" id="userMsg" placeholder="Type message to bot...">
+                        <button id="sendBtn" class="btn btn-primary" style="flex: 0 0 auto; padding: 10px 18px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="sim-grid-layout">
-                    <!-- Phase 1 -->
-                    <div class="sim-section">
-                        <div class="sim-section-header">Phase 1: Intro & Q1</div>
-                        <div class="sim-grid">
-                            <div class="sim-row">
-                                <div class="sim-label">Greeting & Intro</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('I\'m doing good today, thank you. How are you?')">Good, how are you?</button>
-                                </div>
-                            </div>
-                            <div class="sim-row">
-                                <div class="sim-label">Ask for Benefits</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('What benefits do you offer?')">What benefits?</button>
-                                    <button class="sim-btn" onclick="simulateMsg('What are the benefits?')">What benefits?</button>
-                                </div>
-                            </div>
-                            <div class="sim-row">
-                                <div class="sim-label">Q1: Part A & B</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('Yes, I have both Part A and B')">Yes (Qualify)</button>
-                                    <button class="sim-btn sim-btn-danger" onclick="simulateMsg('No, I don\'t have Medicare')">No (Drop)</button>
-                                </div>
-                            </div>
+
+                <!-- Audio controls -->
+                <div class="card">
+                    <div class="card-title">
+                        <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor"
+                                d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" />
+                        </svg>
+                        Voice & Playback Controls
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <span>Speech Speed</span>
+                            <span id="speedValue">1.2x</span>
+                        </div>
+                        <div class="slider-bar">
+                            <input type="range" id="speedSlider" min="0.5" max="2.0" step="0.1" value="1.2">
                         </div>
                     </div>
+                    <div style="margin-top: 15px;">
+                        <div class="slider-header" style="margin-bottom: 8px;">
+                            <span>Bot Audio Player (Auto-plays)</span>
+                        </div>
+                        <audio id="ttsPlayer" controls></audio>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                    <!-- Phase 2 -->
-                    <div class="sim-section">
-                        <div class="sim-section-header">Phase 2: Demographics</div>
-                        <div class="sim-grid">
-                            <div class="sim-row">
-                                <div class="sim-label">Q2: Age Check</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('I\'m 68 years old')">68 Years</button>
-                                    <button class="sim-btn" onclick="simulateMsg('I am 72 years old')">72 Years</button>
-                                </div>
-                            </div>
-                            <div class="sim-row">
-                                <div class="sim-label">Q3: Coverage Updated</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('Yes, I updated it recently')">Yes</button>
-                                    <button class="sim-btn" onclick="simulateMsg('No, I haven\'t updated in a long time')">No</button>
-                                </div>
-                            </div>
-                            <div class="sim-row">
-                                <div class="sim-label">Q4: Plan Type</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('I have a Medicare Advantage plan')">Advantage (Qualify)</button>
-                                    <button class="sim-btn sim-btn-danger" onclick="simulateMsg('I only have a supplement plan')">Supplement (Drop)</button>
-                                </div>
+        <!-- Full-width Campaign Script Simulator Panel -->
+        <div class="card" style="margin-top: 25px;">
+            <div class="card-title">
+                <svg class="title-icon" viewBox="0 0 24 24" width="18" height="18">
+                    <path fill="currentColor"
+                        d="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.1 3.89,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19M17,12H7V10H17V12M17,16H7V14H17V16M13,8H7V6H13V8Z" />
+                </svg>
+                Medicare Script Simulation Sandbox
+            </div>
+
+            <div class="sim-grid-layout">
+                <!-- Phase 1 -->
+                <div class="sim-section">
+                    <div class="sim-section-header">Phase 1: Intro & Q1</div>
+                    <div class="sim-grid">
+                        <div class="sim-row">
+                            <div class="sim-label">Greeting & Intro</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('I\'m doing good today, thank you. How are you?')">Good, how
+                                    are you?</button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Phase 3 -->
-                    <div class="sim-section">
-                        <div class="sim-section-header">Phase 3: Screenings</div>
-                        <div class="sim-grid">
-                            <div class="sim-row">
-                                <div class="sim-label">Q5: Decisions</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('Yes, I make my own healthcare decisions')">Yes (Qualify)</button>
-                                    <button class="sim-btn sim-btn-danger" onclick="simulateMsg('No, my daughter makes decisions for me')">No (Drop)</button>
-                                </div>
-                            </div>
-                            <div class="sim-row">
-                                <div class="sim-label">Q6: Nursing Home</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('No, I live in my own house')">No (Qualify)</button>
-                                    <button class="sim-btn sim-btn-danger" onclick="simulateMsg('Yes, I am in a nursing home')">Yes (Drop)</button>
-                                </div>
-                            </div>
-                            <div class="sim-row">
-                                <div class="sim-label">Q7: Zip Code</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('My zip code is 90210')">90210</button>
-                                    <button class="sim-btn" onclick="simulateMsg('It is 33101')">33101</button>
-                                </div>
+                        <div class="sim-row">
+                            <div class="sim-label">Ask for Benefits</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn" onclick="simulateMsg('What benefits do you offer?')">What
+                                    benefits?</button>
+                                <button class="sim-btn" onclick="simulateMsg('What are the benefits?')">What
+                                    benefits?</button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Phase 4 -->
-                    <div class="sim-section">
-                        <div class="sim-section-header">Phase 4: Special Checks</div>
-                        <div class="sim-grid">
-                            <div class="sim-row">
-                                <div class="sim-label">Q8: VA/Tricare Check</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('No, I don\'t receive VA or Tricare benefits')">No (Qualify)</button>
-                                    <button class="sim-btn sim-btn-danger" onclick="simulateMsg('Yes, I get VA military benefits')">Yes (Drop)</button>
-                                </div>
-                            </div>
-                            <div class="sim-row">
-                                <div class="sim-label">Q9: Medicaid Check</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('No, I only have Medicare')">No</button>
-                                    <button class="sim-btn" onclick="simulateMsg('Yes, I get both Medicaid and Medicare')">Yes</button>
-                                </div>
-                            </div>
-                            <div class="sim-row">
-                                <div class="sim-label">Q10: Important Benefits</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('I would love to increase my dental and vision benefits')">Dental & Vision</button>
-                                    <button class="sim-btn" onclick="simulateMsg('Mainly dental and transportation')">Dental & Transport</button>
-                                </div>
+                        <div class="sim-row">
+                            <div class="sim-label">Q1: Part A & B</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn" onclick="simulateMsg('Yes, I have both Part A and B')">Yes
+                                    (Qualify)</button>
+                                <button class="sim-btn sim-btn-danger"
+                                    onclick="simulateMsg('No, I don\'t have Medicare')">No (Drop)</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="sim-grid-layout" style="margin-top: 15px; grid-template-columns: 1fr;">
-                    <div class="sim-section">
-                        <div class="sim-section-header">Phase 5: Name & Verification Checks</div>
-                        <div class="sim-buttons-container" style="gap: 15px; justify-content: space-between;">
-                            <div class="sim-row" style="flex: 1; min-width: 230px;">
-                                <div class="sim-label">Q11: Medicare Card Handy</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('Yes, I have it handy here, it\'s red white and blue')">Yes, Handy</button>
-                                    <button class="sim-btn" onclick="simulateMsg('No, but I know my SSN if you need it')">No, But know SSN</button>
-                                </div>
+
+                <!-- Phase 2 -->
+                <div class="sim-section">
+                    <div class="sim-section-header">Phase 2: Demographics</div>
+                    <div class="sim-grid">
+                        <div class="sim-row">
+                            <div class="sim-label">Q2: Age Check</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn" onclick="simulateMsg('I\'m 68 years old')">68 Years</button>
+                                <button class="sim-btn" onclick="simulateMsg('I am 72 years old')">72 Years</button>
                             </div>
-                            <div class="sim-row" style="flex: 1; min-width: 230px;">
-                                <div class="sim-label">Q12: Specialist Prep</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('Yes, I understand and that\'s okay with me')">Okay</button>
-                                </div>
+                        </div>
+                        <div class="sim-row">
+                            <div class="sim-label">Q3: Coverage Updated</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn" onclick="simulateMsg('Yes, I updated it recently')">Yes</button>
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('No, I haven\'t updated in a long time')">No</button>
                             </div>
-                            <div class="sim-row" style="flex: 1; min-width: 230px;">
-                                <div class="sim-label">Q13: First & Last Name</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('My name is John Doe')">John Doe</button>
-                                    <button class="sim-btn" onclick="simulateMsg('Mary Smith')">Mary Smith</button>
-                                </div>
+                        </div>
+                        <div class="sim-row">
+                            <div class="sim-label">Q4: Plan Type</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('I have a Medicare Advantage plan')">Advantage
+                                    (Qualify)</button>
+                                <button class="sim-btn sim-btn-danger"
+                                    onclick="simulateMsg('I only have a supplement plan')">Supplement (Drop)</button>
                             </div>
-                            <div class="sim-row" style="flex: 1; min-width: 230px;">
-                                <div class="sim-label">Q14: Permission (Transfer)</div>
-                                <div class="sim-buttons-container">
-                                    <button class="sim-btn" onclick="simulateMsg('Yes, you have my permission to connect me')">Yes, Connect (Transfer)</button>
-                                    <button class="sim-btn sim-btn-danger" onclick="simulateMsg('No, do not connect me')">No (Drop)</button>
-                                </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 3 -->
+                <div class="sim-section">
+                    <div class="sim-section-header">Phase 3: Screenings</div>
+                    <div class="sim-grid">
+                        <div class="sim-row">
+                            <div class="sim-label">Q5: Decisions</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('Yes, I make my own healthcare decisions')">Yes
+                                    (Qualify)</button>
+                                <button class="sim-btn sim-btn-danger"
+                                    onclick="simulateMsg('No, my daughter makes decisions for me')">No (Drop)</button>
+                            </div>
+                        </div>
+                        <div class="sim-row">
+                            <div class="sim-label">Q6: Nursing Home</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn" onclick="simulateMsg('No, I live in my own house')">No
+                                    (Qualify)</button>
+                                <button class="sim-btn sim-btn-danger"
+                                    onclick="simulateMsg('Yes, I am in a nursing home')">Yes (Drop)</button>
+                            </div>
+                        </div>
+                        <div class="sim-row">
+                            <div class="sim-label">Q7: Zip Code</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn" onclick="simulateMsg('My zip code is 90210')">90210</button>
+                                <button class="sim-btn" onclick="simulateMsg('It is 33101')">33101</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 4 -->
+                <div class="sim-section">
+                    <div class="sim-section-header">Phase 4: Special Checks</div>
+                    <div class="sim-grid">
+                        <div class="sim-row">
+                            <div class="sim-label">Q8: VA/Tricare Check</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('No, I don\'t receive VA or Tricare benefits')">No
+                                    (Qualify)</button>
+                                <button class="sim-btn sim-btn-danger"
+                                    onclick="simulateMsg('Yes, I get VA military benefits')">Yes (Drop)</button>
+                            </div>
+                        </div>
+                        <div class="sim-row">
+                            <div class="sim-label">Q9: Medicaid Check</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn" onclick="simulateMsg('No, I only have Medicare')">No</button>
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('Yes, I get both Medicaid and Medicare')">Yes</button>
+                            </div>
+                        </div>
+                        <div class="sim-row">
+                            <div class="sim-label">Q10: Important Benefits</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('I would love to increase my dental and vision benefits')">Dental
+                                    & Vision</button>
+                                <button class="sim-btn" onclick="simulateMsg('Mainly dental and transportation')">Dental
+                                    & Transport</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sim-grid-layout" style="margin-top: 15px; grid-template-columns: 1fr;">
+                <div class="sim-section">
+                    <div class="sim-section-header">Phase 5: Name & Verification Checks</div>
+                    <div class="sim-buttons-container" style="gap: 15px; justify-content: space-between;">
+                        <div class="sim-row" style="flex: 1; min-width: 230px;">
+                            <div class="sim-label">Q11: Medicare Card Handy</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('Yes, I have it handy here, it\'s red white and blue')">Yes,
+                                    Handy</button>
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('No, but I know my SSN if you need it')">No, But know
+                                    SSN</button>
+                            </div>
+                        </div>
+                        <div class="sim-row" style="flex: 1; min-width: 230px;">
+                            <div class="sim-label">Q12: Specialist Prep</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('Yes, I understand and that\'s okay with me')">Okay</button>
+                            </div>
+                        </div>
+                        <div class="sim-row" style="flex: 1; min-width: 230px;">
+                            <div class="sim-label">Q13: First & Last Name</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn" onclick="simulateMsg('My name is John Doe')">John Doe</button>
+                                <button class="sim-btn" onclick="simulateMsg('Mary Smith')">Mary Smith</button>
+                            </div>
+                        </div>
+                        <div class="sim-row" style="flex: 1; min-width: 230px;">
+                            <div class="sim-label">Q14: Permission (Transfer)</div>
+                            <div class="sim-buttons-container">
+                                <button class="sim-btn"
+                                    onclick="simulateMsg('Yes, you have my permission to connect me')">Yes, Connect
+                                    (Transfer)</button>
+                                <button class="sim-btn sim-btn-danger" onclick="simulateMsg('No, do not connect me')">No
+                                    (Drop)</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <script>
-            // ── Background Particle & Shockwave Engine (Slate Grey Enterprise Theme) ──
-            const canvas = document.getElementById('bg-canvas');
-            const ctx = canvas.getContext('2d');
-            let particles = [];
-            let waves = [];
-            const PARTICLE_COUNT = 75;
-            let mouse = { x: undefined, y: undefined, radius: 150 };
+    <script>
+        // ── Background Particle & Shockwave Engine (Slate Grey Enterprise Theme) ──
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let waves = [];
+        const PARTICLE_COUNT = 75;
+        let mouse = { x: undefined, y: undefined, radius: 150 };
 
-            function resizeCanvas() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            window.addEventListener('resize', resizeCanvas);
-            resizeCanvas();
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-            // Track mouse on canvas
-            window.addEventListener('mousemove', (e) => {
-                mouse.x = e.clientX;
-                mouse.y = e.clientY;
-            });
-            window.addEventListener('mouseout', () => {
-                mouse.x = undefined;
-                mouse.y = undefined;
-            });
+        // Track mouse on canvas
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+        window.addEventListener('mouseout', () => {
+            mouse.x = undefined;
+            mouse.y = undefined;
+        });
 
-            // Trigger Shockwave on Canvas click
-            window.addEventListener('click', (e) => {
-                if (e.target === canvas) {
-                    waves.push(new Shockwave(e.clientX, e.clientY));
-                    if (waves.length > 4) waves.shift();
-                }
-            });
-
-            class Shockwave {
-                constructor(x, y) {
-                    this.x = x;
-                    this.y = y;
-                    this.radius = 0;
-                    this.maxRadius = 200;
-                    this.speed = 5;
-                    this.force = 8;
-                }
-                update() {
-                    this.radius += this.speed;
-                    return this.radius < this.maxRadius;
-                }
-                draw() {
-                    ctx.strokeStyle = `rgba(100, 116, 139, ${0.15 * (1 - this.radius / this.maxRadius)})`;
-                    ctx.lineWidth = 1.0;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-            }
-
-            class Particle {
-                constructor() {
-                    this.reset(true);
-                }
-                reset(randomY = false) {
-                    this.x = Math.random() * canvas.width;
-                    this.y = randomY ? Math.random() * canvas.height : canvas.height + 10;
-                    this.vx = (Math.random() - 0.5) * 0.3;
-                    this.vy = -(Math.random() * 0.6 + 0.15); // anti-gravity float up
-                    this.radius = Math.random() * 1.5 + 0.8;
-                    this.alpha = Math.random() * 0.25 + 0.08;
-                    
-                    const colors = [
-                        'rgba(100, 116, 139,', // Slate Grey
-                        'rgba(148, 163, 184,', // Light Slate
-                        'rgba(71, 85, 105,',   // Dark Slate
-                        'rgba(37, 99, 235,'    // Soft Blue Accent
-                    ];
-                    this.colorBase = colors[Math.floor(Math.random() * colors.length)];
-                }
-                update() {
-                    this.x += this.vx;
-                    this.y += this.vy;
-
-                    // Reset when floating past top
-                    if (this.y < -10) {
-                        this.reset(false);
-                    }
-
-                    // Mouse repulsion
-                    if (mouse.x !== undefined && mouse.y !== undefined) {
-                        const dx = this.x - mouse.x;
-                        const dy = this.y - mouse.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < mouse.radius) {
-                            const force = (mouse.radius - dist) / mouse.radius;
-                            this.vx += (dx / dist) * force * 0.04;
-                            this.vy += (dy / dist) * force * 0.04;
-                        }
-                    }
-
-                    // Shockwaves
-                    waves.forEach(wave => {
-                        const dx = this.x - wave.x;
-                        const dy = this.y - wave.y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (Math.abs(dist - wave.radius) < 20) {
-                            const force = wave.force * (1 - wave.radius / wave.maxRadius);
-                            this.vx += (dx / dist) * force * 0.1;
-                            this.vy += (dy / dist) * force * 0.1;
-                        }
-                    });
-
-                    // Speed limits & damping
-                    this.vx *= 0.97;
-                    this.vy *= 0.97;
-                    // Ensure they float up
-                    if (this.vy > -0.08) this.vy -= 0.03;
-                }
-                draw() {
-                    ctx.fillStyle = this.colorBase + this.alpha + ')';
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-
-            // Init particles
-            for (let i = 0; i < PARTICLE_COUNT; i++) {
-                particles.push(new Particle());
-            }
-
-            // Generate central audio explosion wave
-            function createSpeechExplosion() {
-                const cx = window.innerWidth / 2;
-                const cy = window.innerHeight * 0.35;
-                waves.push(new Shockwave(cx, cy));
+        // Trigger Shockwave on Canvas click
+        window.addEventListener('click', (e) => {
+            if (e.target === canvas) {
+                waves.push(new Shockwave(e.clientX, e.clientY));
                 if (waves.length > 4) waves.shift();
             }
+        });
 
-            // Particles & Waves Rendering Tick
-            function renderBackground() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw delicate constellation lines
-                ctx.strokeStyle = 'rgba(100, 116, 139, 0.025)';
-                ctx.lineWidth = 0.5;
-                for (let i = 0; i < particles.length; i++) {
-                    for (let j = i + 1; j < particles.length; j++) {
-                        const dx = particles[i].x - particles[j].x;
-                        const dy = particles[i].y - particles[j].y;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 90) {
-                            ctx.beginPath();
-                            ctx.moveTo(particles[i].x, particles[i].y);
-                            ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.stroke();
-                        }
+        class Shockwave {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.maxRadius = 200;
+                this.speed = 5;
+                this.force = 8;
+            }
+            update() {
+                this.radius += this.speed;
+                return this.radius < this.maxRadius;
+            }
+            draw() {
+                ctx.strokeStyle = `rgba(100, 116, 139, ${0.15 * (1 - this.radius / this.maxRadius)})`;
+                ctx.lineWidth = 1.0;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        class Particle {
+            constructor() {
+                this.reset(true);
+            }
+            reset(randomY = false) {
+                this.x = Math.random() * canvas.width;
+                this.y = randomY ? Math.random() * canvas.height : canvas.height + 10;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = -(Math.random() * 0.6 + 0.15); // anti-gravity float up
+                this.radius = Math.random() * 1.5 + 0.8;
+                this.alpha = Math.random() * 0.25 + 0.08;
+
+                const colors = [
+                    'rgba(100, 116, 139,', // Slate Grey
+                    'rgba(148, 163, 184,', // Light Slate
+                    'rgba(71, 85, 105,',   // Dark Slate
+                    'rgba(37, 99, 235,'    // Soft Blue Accent
+                ];
+                this.colorBase = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Reset when floating past top
+                if (this.y < -10) {
+                    this.reset(false);
+                }
+
+                // Mouse repulsion
+                if (mouse.x !== undefined && mouse.y !== undefined) {
+                    const dx = this.x - mouse.x;
+                    const dy = this.y - mouse.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < mouse.radius) {
+                        const force = (mouse.radius - dist) / mouse.radius;
+                        this.vx += (dx / dist) * force * 0.04;
+                        this.vy += (dy / dist) * force * 0.04;
                     }
                 }
 
-                // Render shockwaves
-                waves = waves.filter(wave => {
-                    const active = wave.update();
-                    if (active) wave.draw();
-                    return active;
+                // Shockwaves
+                waves.forEach(wave => {
+                    const dx = this.x - wave.x;
+                    const dy = this.y - wave.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (Math.abs(dist - wave.radius) < 20) {
+                        const force = wave.force * (1 - wave.radius / wave.maxRadius);
+                        this.vx += (dx / dist) * force * 0.1;
+                        this.vy += (dy / dist) * force * 0.1;
+                    }
                 });
 
-                // Render particles
-                particles.forEach(p => {
-                    p.update();
-                    p.draw();
+                // Speed limits & damping
+                this.vx *= 0.97;
+                this.vy *= 0.97;
+                // Ensure they float up
+                if (this.vy > -0.08) this.vy -= 0.03;
+            }
+            draw() {
+                ctx.fillStyle = this.colorBase + this.alpha + ')';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Init particles
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(new Particle());
+        }
+
+        // Generate central audio explosion wave
+        function createSpeechExplosion() {
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight * 0.35;
+            waves.push(new Shockwave(cx, cy));
+            if (waves.length > 4) waves.shift();
+        }
+
+        // Particles & Waves Rendering Tick
+        function renderBackground() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw delicate constellation lines
+            ctx.strokeStyle = 'rgba(100, 116, 139, 0.025)';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 90) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Render shockwaves
+            waves = waves.filter(wave => {
+                const active = wave.update();
+                if (active) wave.draw();
+                return active;
+            });
+
+            // Render particles
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(renderBackground);
+        }
+        renderBackground();
+
+
+        // ── AI Avatar Core visualizer controls ──
+        function setAiAvatarState(state) {
+            const core = document.getElementById('ai-core');
+            const bars = document.querySelectorAll('.wave-bar');
+
+            core.classList.remove('speaking-core', 'listening-core');
+            bars.forEach(b => b.classList.remove('speaking-wave-bar', 'listening-wave-bar'));
+
+            if (state === 'speaking') {
+                core.classList.add('speaking-core');
+                bars.forEach(b => b.classList.add('speaking-wave-bar'));
+            } else if (state === 'listening') {
+                core.classList.add('listening-core');
+                bars.forEach(b => b.classList.add('listening-wave-bar'));
+            }
+        }
+
+
+        // ── Antigravity Physics Engine Sandbox Mode ──
+        let antigravityActive = false;
+        let floatingCards = [];
+        let physicsInterval = null;
+
+        const GRAVITY_Y = -0.045; // gentle upward pull
+        const AIR_RESISTANCE = 0.993;
+        const BOUNCE = 0.85;
+
+        class FloatingCard {
+            constructor(element, index) {
+                this.element = element;
+                this.index = index;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                // Randomized initial velocities
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 3 - 2;
+                this.width = 0;
+                this.height = 0;
+                this.left = 0;
+                this.top = 0;
+                this.isDragging = false;
+            }
+            updateHomeRect() {
+                const prevTransform = this.element.style.transform;
+                const prevTransition = this.element.style.transition;
+                this.element.style.transform = 'none';
+                this.element.style.transition = 'none';
+
+                const rect = this.element.getBoundingClientRect();
+                this.width = rect.width;
+                this.height = rect.height;
+                this.left = rect.left + window.scrollX;
+                this.top = rect.top + window.scrollY;
+
+                this.element.style.transform = prevTransform;
+                this.element.style.transition = prevTransition;
+            }
+            tick(viewportW, viewportH) {
+                if (this.isDragging) return;
+
+                this.vy += GRAVITY_Y;
+                this.vx *= AIR_RESISTANCE;
+                this.vy *= AIR_RESISTANCE;
+
+                this.offsetX += this.vx;
+                this.offsetY += this.vy;
+
+                const absoluteLeft = this.left + this.offsetX;
+                const absoluteTop = this.top + this.offsetY;
+                const absoluteRight = absoluteLeft + this.width;
+                const absoluteBottom = absoluteTop + this.height;
+
+                // Viewport boundaries bouncing physics
+                if (absoluteLeft < 0) {
+                    this.offsetX = -this.left;
+                    this.vx = -this.vx * BOUNCE;
+                } else if (absoluteRight > viewportW) {
+                    this.offsetX = viewportW - this.left - this.width;
+                    this.vx = -this.vx * BOUNCE;
+                }
+
+                if (absoluteTop < 0) {
+                    this.offsetY = -this.top;
+                    this.vy = -this.vy * BOUNCE;
+                } else if (absoluteBottom > viewportH) {
+                    this.offsetY = viewportH - this.top - this.height;
+                    this.vy = -this.vy * BOUNCE;
+                }
+
+                this.applyTransform();
+            }
+            applyTransform() {
+                this.element.style.transform = `translate3d(${this.offsetX}px, ${this.offsetY}px, 0)`;
+            }
+        }
+
+        // Drag and Throw Card physics inside sandbox
+        let activeDragCard = null;
+        let dragStartX = 0, dragStartY = 0;
+        let dragStartOffsetX = 0, dragStartOffsetY = 0;
+        let lastMouseX = 0, lastMouseY = 0;
+
+        function setupDragging() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.style.cursor = 'grab';
+
+                card.addEventListener('mousedown', (e) => {
+                    if (!antigravityActive) return;
+                    if (e.target.closest('button, input, select, textarea, audio, range')) return;
+
+                    e.preventDefault();
+                    activeDragCard = floatingCards.find(fc => fc.element === card);
+                    if (activeDragCard) {
+                        activeDragCard.isDragging = true;
+                        card.style.cursor = 'grabbing';
+                        card.classList.add('dragging');
+
+                        dragStartX = e.clientX;
+                        dragStartY = e.clientY;
+                        dragStartOffsetX = activeDragCard.offsetX;
+                        dragStartOffsetY = activeDragCard.offsetY;
+
+                        lastMouseX = e.clientX;
+                        lastMouseY = e.clientY;
+                    }
                 });
+            });
+        }
 
-                requestAnimationFrame(renderBackground);
+        window.addEventListener('mousemove', (e) => {
+            if (!antigravityActive || !activeDragCard) return;
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+
+            activeDragCard.offsetX = dragStartOffsetX + deltaX;
+            activeDragCard.offsetY = dragStartOffsetY + deltaY;
+
+            // Track instantaneous drag velocities
+            activeDragCard.vx = (e.clientX - lastMouseX) * 0.7;
+            activeDragCard.vy = (e.clientY - lastMouseY) * 0.7;
+
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+
+            activeDragCard.applyTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (activeDragCard) {
+                activeDragCard.isDragging = false;
+                activeDragCard.element.style.cursor = 'grab';
+                activeDragCard.element.classList.remove('dragging');
+                activeDragCard = null;
             }
-            renderBackground();
+        });
 
+        function startPhysicsLoop() {
+            if (physicsInterval) return;
+            physicsInterval = setInterval(() => {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                floatingCards.forEach(fc => fc.tick(w, h));
+            }, 1000 / 60);
+        }
 
-            // ── AI Avatar Core visualizer controls ──
-            function setAiAvatarState(state) {
-                const core = document.getElementById('ai-core');
-                const bars = document.querySelectorAll('.wave-bar');
-                
-                core.classList.remove('speaking-core', 'listening-core');
-                bars.forEach(b => b.classList.remove('speaking-wave-bar', 'listening-wave-bar'));
-                
-                if (state === 'speaking') {
-                    core.classList.add('speaking-core');
-                    bars.forEach(b => b.classList.add('speaking-wave-bar'));
-                } else if (state === 'listening') {
-                    core.classList.add('listening-core');
-                    bars.forEach(b => b.classList.add('listening-wave-bar'));
-                }
+        function stopPhysicsLoop() {
+            if (physicsInterval) {
+                clearInterval(physicsInterval);
+                physicsInterval = null;
             }
+        }
 
+        // Sandbox Engine toggle activation
+        const sandboxToggleBtn = document.getElementById('sandboxToggle');
+        const sandboxIndicator = sandboxToggleBtn.querySelector('.sandbox-indicator');
+        const sandboxText = sandboxToggleBtn.querySelector('.sandbox-btn-text');
 
-            // ── Antigravity Physics Engine Sandbox Mode ──
-            let antigravityActive = false;
-            let floatingCards = [];
-            let physicsInterval = null;
+        sandboxToggleBtn.onclick = () => {
+            antigravityActive = !antigravityActive;
 
-            const GRAVITY_Y = -0.045; // gentle upward pull
-            const AIR_RESISTANCE = 0.993;
-            const BOUNCE = 0.85;
+            if (antigravityActive) {
+                sandboxToggleBtn.classList.add('active');
+                sandboxText.innerText = 'ACTIVE';
+                document.body.classList.add('antigravity-mode');
 
-            class FloatingCard {
-                constructor(element, index) {
-                    this.element = element;
-                    this.index = index;
-                    this.offsetX = 0;
-                    this.offsetY = 0;
-                    // Randomized initial velocities
-                    this.vx = (Math.random() - 0.5) * 4;
-                    this.vy = (Math.random() - 0.5) * 3 - 2;
-                    this.width = 0;
-                    this.height = 0;
-                    this.left = 0;
-                    this.top = 0;
-                    this.isDragging = false;
-                }
-                updateHomeRect() {
-                    const prevTransform = this.element.style.transform;
-                    const prevTransition = this.element.style.transition;
-                    this.element.style.transform = 'none';
-                    this.element.style.transition = 'none';
-                    
-                    const rect = this.element.getBoundingClientRect();
-                    this.width = rect.width;
-                    this.height = rect.height;
-                    this.left = rect.left + window.scrollX;
-                    this.top = rect.top + window.scrollY;
-                    
-                    this.element.style.transform = prevTransform;
-                    this.element.style.transition = prevTransition;
-                }
-                tick(viewportW, viewportH) {
-                    if (this.isDragging) return;
-
-                    this.vy += GRAVITY_Y;
-                    this.vx *= AIR_RESISTANCE;
-                    this.vy *= AIR_RESISTANCE;
-
-                    this.offsetX += this.vx;
-                    this.offsetY += this.vy;
-
-                    const absoluteLeft = this.left + this.offsetX;
-                    const absoluteTop = this.top + this.offsetY;
-                    const absoluteRight = absoluteLeft + this.width;
-                    const absoluteBottom = absoluteTop + this.height;
-
-                    // Viewport boundaries bouncing physics
-                    if (absoluteLeft < 0) {
-                        this.offsetX = -this.left;
-                        this.vx = -this.vx * BOUNCE;
-                    } else if (absoluteRight > viewportW) {
-                        this.offsetX = viewportW - this.left - this.width;
-                        this.vx = -this.vx * BOUNCE;
-                    }
-
-                    if (absoluteTop < 0) {
-                        this.offsetY = -this.top;
-                        this.vy = -this.vy * BOUNCE;
-                    } else if (absoluteBottom > viewportH) {
-                        this.offsetY = viewportH - this.top - this.height;
-                        this.vy = -this.vy * BOUNCE;
-                    }
-
-                    this.applyTransform();
-                }
-                applyTransform() {
-                    this.element.style.transform = `translate3d(${this.offsetX}px, ${this.offsetY}px, 0)`;
-                }
-            }
-
-            // Drag and Throw Card physics inside sandbox
-            let activeDragCard = null;
-            let dragStartX = 0, dragStartY = 0;
-            let dragStartOffsetX = 0, dragStartOffsetY = 0;
-            let lastMouseX = 0, lastMouseY = 0;
-
-            function setupDragging() {
                 const cards = document.querySelectorAll('.card');
-                cards.forEach(card => {
-                    card.style.cursor = 'grab';
-                    
-                    card.addEventListener('mousedown', (e) => {
-                        if (!antigravityActive) return;
-                        if (e.target.closest('button, input, select, textarea, audio, range')) return;
-                        
-                        e.preventDefault();
-                        activeDragCard = floatingCards.find(fc => fc.element === card);
-                        if (activeDragCard) {
-                            activeDragCard.isDragging = true;
-                            card.style.cursor = 'grabbing';
-                            card.classList.add('dragging');
-                            
-                            dragStartX = e.clientX;
-                            dragStartY = e.clientY;
-                            dragStartOffsetX = activeDragCard.offsetX;
-                            dragStartOffsetY = activeDragCard.offsetY;
-                            
-                            lastMouseX = e.clientX;
-                            lastMouseY = e.clientY;
-                        }
+                floatingCards = Array.from(cards).map((card, idx) => {
+                    const fc = new FloatingCard(card, idx);
+                    fc.updateHomeRect();
+                    card.style.transition = 'none';
+                    card.classList.add('floating-physics');
+                    return fc;
+                });
+
+                setupDragging();
+                startPhysicsLoop();
+            } else {
+                sandboxToggleBtn.classList.remove('active');
+                sandboxText.innerText = 'OFFLINE';
+                document.body.classList.remove('antigravity-mode');
+
+                stopPhysicsLoop();
+
+                floatingCards.forEach(fc => {
+                    fc.element.style.cursor = '';
+                    fc.element.style.transition = 'transform 0.8s cubic-bezier(0.25, 1, 0.25, 1)';
+                    fc.element.style.transform = 'translate3d(0, 0, 0)';
+                    fc.element.classList.remove('floating-physics');
+                });
+
+                setTimeout(() => {
+                    floatingCards.forEach(fc => {
+                        fc.element.style.transition = '';
+                        fc.element.style.transform = '';
+                    });
+                    floatingCards = [];
+                }, 800);
+            }
+        };
+
+
+        // ── Voice Bot Session Communication Logic ──
+        let ws;
+        let audioContext;
+        let mediaStream;
+        let processor;
+        let sendingAudio = true;
+
+        const audioQueue = [];
+        let isPlayingQueue = false;
+        let currentSource = null;
+
+        async function enqueueAudio(arrayBuffer) {
+            audioQueue.push(arrayBuffer);
+            if (!isPlayingQueue) processAudioQueue();
+        }
+
+        async function processAudioQueue() {
+            if (isPlayingQueue) return;
+            isPlayingQueue = true;
+            while (audioQueue.length > 0) {
+                const buf = audioQueue.shift();
+                await playAudioBuffer(buf);
+            }
+            isPlayingQueue = false;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ text: '__PLAYBACK_DONE__' }));
+            }
+        }
+
+        const log = (msg, type = 'meta') => {
+            const div = document.getElementById('messages');
+            let bubbleClass = 'msg-meta';
+
+            if (type === 'user') {
+                bubbleClass = 'msg-user';
+                div.innerHTML += `<div class="msg ${bubbleClass}"><strong>You:</strong> ${msg}</div>`;
+            } else if (type === 'bot') {
+                bubbleClass = 'msg-bot';
+                const cleanMsg = msg.replace(/\[TRANSFER\]/g, '').replace(/\[DROP\]/g, '').trim();
+                div.innerHTML += `<div class="msg ${bubbleClass}"><strong>Emily:</strong> ${cleanMsg}</div>`;
+            } else {
+                div.innerHTML += `<div class="msg-meta">// ${msg}</div>`;
+            }
+
+            div.scrollTop = div.scrollHeight;
+        };
+
+        function simulateMsg(txt) {
+            const input = document.getElementById('userMsg');
+            input.value = txt;
+            document.getElementById('sendBtn').click();
+        }
+
+        async function playAudioBuffer(arrayBuffer) {
+            try {
+                const bufferCopy = arrayBuffer.slice(0);
+                const audioBuffer = await audioContext.decodeAudioData(bufferCopy);
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                currentSource = source;
+
+                return new Promise((resolve) => {
+                    source.onended = () => {
+                        if (currentSource === source) currentSource = null;
+                        resolve();
+                    };
+                    source.start(0);
+                });
+            } catch (err) {
+                console.log(`Web Audio API Error: ${err.message}. Falling back to audio player...`);
+                return new Promise((resolve) => {
+                    const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+                    const url = URL.createObjectURL(blob);
+                    const player = document.getElementById('ttsPlayer');
+                    player.src = url;
+                    player.onended = () => { URL.revokeObjectURL(url); resolve(); };
+                    player.onerror = () => { resolve(); };
+                    player.play().catch((e) => {
+                        log(`Playback blocked: ${e.message}`);
+                        resolve();
                     });
                 });
             }
+        }
 
-            window.addEventListener('mousemove', (e) => {
-                if (!antigravityActive || !activeDragCard) return;
-                const deltaX = e.clientX - dragStartX;
-                const deltaY = e.clientY - dragStartY;
-                
-                activeDragCard.offsetX = dragStartOffsetX + deltaX;
-                activeDragCard.offsetY = dragStartOffsetY + deltaY;
-                
-                // Track instantaneous drag velocities
-                activeDragCard.vx = (e.clientX - lastMouseX) * 0.7;
-                activeDragCard.vy = (e.clientY - lastMouseY) * 0.7;
-                
-                lastMouseX = e.clientX;
-                lastMouseY = e.clientY;
-                
-                activeDragCard.applyTransform();
-            });
-
-            window.addEventListener('mouseup', () => {
-                if (activeDragCard) {
-                    activeDragCard.isDragging = false;
-                    activeDragCard.element.style.cursor = 'grab';
-                    activeDragCard.element.classList.remove('dragging');
-                    activeDragCard = null;
-                }
-            });
-
-            function startPhysicsLoop() {
-                if (physicsInterval) return;
-                physicsInterval = setInterval(() => {
-                    const w = window.innerWidth;
-                    const h = window.innerHeight;
-                    floatingCards.forEach(fc => fc.tick(w, h));
-                }, 1000 / 60);
+        document.getElementById('startBtn').onclick = async () => {
+            if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                log("❌ Microphone blocked on insecure origins. Use localhost or HTTPS.");
+                return;
             }
 
-            function stopPhysicsLoop() {
-                if (physicsInterval) {
-                    clearInterval(physicsInterval);
-                    physicsInterval = null;
-                }
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            }
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
             }
 
-            // Sandbox Engine toggle activation
-            const sandboxToggleBtn = document.getElementById('sandboxToggle');
-            const sandboxIndicator = sandboxToggleBtn.querySelector('.sandbox-indicator');
-            const sandboxText = sandboxToggleBtn.querySelector('.sandbox-btn-text');
+            try {
+                log("🎤 Requesting microphone access...");
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 16000,
+                        channelCount: 1
+                    }
+                });
+                log("✅ Microphone access granted.");
 
-            sandboxToggleBtn.onclick = () => {
-                antigravityActive = !antigravityActive;
-                
-                if (antigravityActive) {
-                    sandboxToggleBtn.classList.add('active');
-                    sandboxText.innerText = 'ACTIVE';
-                    document.body.classList.add('antigravity-mode');
-                    
-                    const cards = document.querySelectorAll('.card');
-                    floatingCards = Array.from(cards).map((card, idx) => {
-                        const fc = new FloatingCard(card, idx);
-                        fc.updateHomeRect();
-                        card.style.transition = 'none';
-                        card.classList.add('floating-physics');
-                        return fc;
-                    });
-                    
-                    setupDragging();
-                    startPhysicsLoop();
-                } else {
-                    sandboxToggleBtn.classList.remove('active');
-                    sandboxText.innerText = 'OFFLINE';
-                    document.body.classList.remove('antigravity-mode');
-                    
-                    stopPhysicsLoop();
-                    
-                    floatingCards.forEach(fc => {
-                        fc.element.style.cursor = '';
-                        fc.element.style.transition = 'transform 0.8s cubic-bezier(0.25, 1, 0.25, 1)';
-                        fc.element.style.transform = 'translate3d(0, 0, 0)';
-                        fc.element.classList.remove('floating-physics');
-                    });
-                    
-                    setTimeout(() => {
-                        floatingCards.forEach(fc => {
-                            fc.element.style.transition = '';
-                            fc.element.style.transform = '';
-                        });
-                        floatingCards = [];
-                    }, 800);
-                }
-            };
+                document.getElementById('micStatus').innerHTML = '<span class="status-dot active"></span> Active';
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
 
+                ws = new WebSocket(`ws://${location.host}/ws/browser_test`);
+                ws.binaryType = "arraybuffer";
 
-            // ── Voice Bot Session Communication Logic ──
-            let ws;
-            let audioContext;
-            let mediaStream;
-            let processor;
-            let sendingAudio = true;
+                ws.onopen = () => {
+                    log("🌐 Connected to outbound agent service.");
+                    setAiAvatarState('listening');
 
-            const audioQueue = [];
-            let isPlayingQueue = false;
-            let currentSource = null;
+                    const speedVal = parseFloat(document.getElementById('speedSlider').value);
+                    const rateInt = Math.round((speedVal - 1.0) * 100);
+                    const rateStr = (rateInt >= 0 ? '+' : '') + rateInt + '%';
 
-            async function enqueueAudio(arrayBuffer) {
-                audioQueue.push(arrayBuffer);
-                if (!isPlayingQueue) processAudioQueue();
-            }
+                    ws.send(JSON.stringify({
+                        type: "config",
+                        sampleRate: audioContext.sampleRate,
+                        speechRate: rateStr
+                    }));
 
-            async function processAudioQueue() {
-                if (isPlayingQueue) return;
-                isPlayingQueue = true;
-                while (audioQueue.length > 0) {
-                    const buf = audioQueue.shift();
-                    await playAudioBuffer(buf);
-                }
-                isPlayingQueue = false;
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({text: '__PLAYBACK_DONE__'}));
-                }
-            }
+                    const source = audioContext.createMediaStreamSource(mediaStream);
+                    processor = audioContext.createScriptProcessor(1024, 1, 1);
 
-            const log = (msg, type='meta') => {
-                const div = document.getElementById('messages');
-                let bubbleClass = 'msg-meta';
-                
-                if (type === 'user') {
-                    bubbleClass = 'msg-user';
-                    div.innerHTML += `<div class="msg ${bubbleClass}"><strong>You:</strong> ${msg}</div>`;
-                } else if (type === 'bot') {
-                    bubbleClass = 'msg-bot';
-                    const cleanMsg = msg.replace(/\[TRANSFER\]/g, '').replace(/\[DROP\]/g, '').trim();
-                    div.innerHTML += `<div class="msg ${bubbleClass}"><strong>Emily:</strong> ${cleanMsg}</div>`;
-                } else {
-                    div.innerHTML += `<div class="msg-meta">// ${msg}</div>`;
-                }
-                
-                div.scrollTop = div.scrollHeight;
-            };
-
-            function simulateMsg(txt) {
-                const input = document.getElementById('userMsg');
-                input.value = txt;
-                document.getElementById('sendBtn').click();
-            }
-
-            async function playAudioBuffer(arrayBuffer) {
-                try {
-                    const bufferCopy = arrayBuffer.slice(0);
-                    const audioBuffer = await audioContext.decodeAudioData(bufferCopy);
-                    const source = audioContext.createBufferSource();
-                    source.buffer = audioBuffer;
-                    source.connect(audioContext.destination);
-                    currentSource = source;
-                    
-                    return new Promise((resolve) => {
-                        source.onended = () => {
-                            if (currentSource === source) currentSource = null;
-                            resolve();
-                        };
-                        source.start(0);
-                    });
-                } catch (err) {
-                    console.log(`Web Audio API Error: ${err.message}. Falling back to audio player...`);
-                    return new Promise((resolve) => {
-                        const blob = new Blob([arrayBuffer], {type: 'audio/mpeg'});
-                        const url = URL.createObjectURL(blob);
-                        const player = document.getElementById('ttsPlayer');
-                        player.src = url;
-                        player.onended = () => { URL.revokeObjectURL(url); resolve(); };
-                        player.onerror = () => { resolve(); };
-                        player.play().catch((e) => {
-                            log(`Playback blocked: ${e.message}`);
-                            resolve();
-                        });
-                    });
-                }
-            }
-
-            document.getElementById('startBtn').onclick = async () => {
-                if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                    log("❌ Microphone blocked on insecure origins. Use localhost or HTTPS.");
-                    return;
-                }
-
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)({sampleRate: 16000});
-                }
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                }
-
-                try {
-                    log("🎤 Requesting microphone access...");
-                    mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: { 
-                            echoCancellation: true, 
-                            noiseSuppression: true, 
-                            autoGainControl: true,
-                            sampleRate: 16000,
-                            channelCount: 1
-                        } 
-                    });
-                    log("✅ Microphone access granted.");
-
-                    document.getElementById('micStatus').innerHTML = '<span class="status-dot active"></span> Active';
-                    document.getElementById('startBtn').disabled = true;
-                    document.getElementById('stopBtn').disabled = false;
-
-                    ws = new WebSocket(`ws://${location.host}/ws/browser_test`);
-                    ws.binaryType = "arraybuffer";
-
-                    ws.onopen = () => {
-                        log("🌐 Connected to outbound agent service.");
-                        setAiAvatarState('listening');
-                        
-                        const speedVal = parseFloat(document.getElementById('speedSlider').value);
-                        const rateInt = Math.round((speedVal - 1.0) * 100);
-                        const rateStr = (rateInt >= 0 ? '+' : '') + rateInt + '%';
-
-                        ws.send(JSON.stringify({ 
-                            type: "config", 
-                            sampleRate: audioContext.sampleRate,
-                            speechRate: rateStr
-                        }));
-
-                        const source = audioContext.createMediaStreamSource(mediaStream);
-                        processor = audioContext.createScriptProcessor(1024, 1, 1);
-
-                        processor.onaudioprocess = (e) => {
-                            const inputData = e.inputBuffer.getChannelData(0);
-                            const pcm16 = new Int16Array(inputData.length);
-                            for (let i = 0; i < inputData.length; i++) {
-                                let s = inputData[i];
-                                s = Math.max(-1, Math.min(1, s));
-                                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-                            }
-                            if (ws && ws.readyState === WebSocket.OPEN) {
-                                ws.send(pcm16.buffer);
-                            }
-                        };
-
-                        source.connect(processor);
-                        processor.connect(audioContext.destination);
-                    };
-
-                    ws.onmessage = async (event) => {
-                        if (typeof event.data === 'string') {
-                            if (event.data.startsWith("STATUS:")) {
-                                const parts = event.data.substring(7).split(":", 2);
-                                const key = parts[0].trim().toLowerCase();
-                                const val = parts.slice(1).join(":").trim() || parts[0];
-                                if (key === 'stt') {
-                                    document.getElementById('sttStatus').innerHTML = `<span class="status-dot active"></span> ${val}`;
-                                } else if (key === 'tts') {
-                                    document.getElementById('ttsStatus').innerHTML = `<span class="status-dot active"></span> ${val}`;
-                                }
-                                return;
-                            }
-                            if (event.data === 'CTRL:SPEAKING') {
-                                document.getElementById('micStatus').innerHTML = '<span class="status-dot warn"></span> Emily Speaking';
-                                setAiAvatarState('speaking');
-                                return;
-                            }
-                            if (event.data === 'CTRL:STOP_AUDIO') {
-                                audioQueue.length = 0;
-                                isPlayingQueue = false;
-                                if (currentSource) {
-                                    try { currentSource.stop(); } catch(e) {}
-                                    currentSource = null;
-                                }
-                                const player = document.getElementById('ttsPlayer');
-                                if (player) {
-                                    player.pause();
-                                    player.currentTime = 0;
-                                }
-                                document.getElementById('micStatus').innerHTML = '<span class="status-dot active"></span> Listening';
-                                setAiAvatarState('listening');
-                                return;
-                            }
-                            if (event.data === 'CTRL:LISTENING') {
-                                document.getElementById('micStatus').innerHTML = '<span class="status-dot active"></span> Listening';
-                                setAiAvatarState('listening');
-                                return;
-                            }
-                            
-                            // Log textual responses
-                            if (event.data.startsWith("Bot:")) {
-                                log(event.data.substring(4).trim(), 'bot');
-                            } else if (event.data.startsWith("You (Voice):") || event.data.startsWith("You (Text):")) {
-                                const userText = event.data.split(":", 2)[1].trim();
-                                log(userText, 'user');
-                            } else {
-                                log(event.data, 'meta');
-                            }
-                            
-                        } else if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
-                            sendingAudio = false;
-                            const arrayBuffer = event.data instanceof Blob ? await event.data.arrayBuffer() : event.data;
-                            enqueueAudio(arrayBuffer);
-                            createSpeechExplosion();
-                            sendingAudio = true;
+                    processor.onaudioprocess = (e) => {
+                        const inputData = e.inputBuffer.getChannelData(0);
+                        const pcm16 = new Int16Array(inputData.length);
+                        for (let i = 0; i < inputData.length; i++) {
+                            let s = inputData[i];
+                            s = Math.max(-1, Math.min(1, s));
+                            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        }
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(pcm16.buffer);
                         }
                     };
 
-                    ws.onclose = () => {
-                        log("🔌 Terminated connection with outbound agent service.");
-                        cleanup();
-                    };
+                    source.connect(processor);
+                    processor.connect(audioContext.destination);
+                };
 
-                } catch(err) {
-                    log(`❌ MIC ERROR: ${err.message}`);
-                }
-            };
+                ws.onmessage = async (event) => {
+                    if (typeof event.data === 'string') {
+                        if (event.data.startsWith("STATUS:")) {
+                            const parts = event.data.substring(7).split(":", 2);
+                            const key = parts[0].trim().toLowerCase();
+                            const val = parts.slice(1).join(":").trim() || parts[0];
+                            if (key === 'stt') {
+                                document.getElementById('sttStatus').innerHTML = `<span class="status-dot active"></span> ${val}`;
+                            } else if (key === 'tts') {
+                                document.getElementById('ttsStatus').innerHTML = `<span class="status-dot active"></span> ${val}`;
+                            }
+                            return;
+                        }
+                        if (event.data === 'CTRL:SPEAKING') {
+                            document.getElementById('micStatus').innerHTML = '<span class="status-dot warn"></span> Emily Speaking';
+                            setAiAvatarState('speaking');
+                            return;
+                        }
+                        if (event.data === 'CTRL:STOP_AUDIO') {
+                            audioQueue.length = 0;
+                            isPlayingQueue = false;
+                            if (currentSource) {
+                                try { currentSource.stop(); } catch (e) { }
+                                currentSource = null;
+                            }
+                            const player = document.getElementById('ttsPlayer');
+                            if (player) {
+                                player.pause();
+                                player.currentTime = 0;
+                            }
+                            document.getElementById('micStatus').innerHTML = '<span class="status-dot active"></span> Listening';
+                            setAiAvatarState('listening');
+                            return;
+                        }
+                        if (event.data === 'CTRL:LISTENING') {
+                            document.getElementById('micStatus').innerHTML = '<span class="status-dot active"></span> Listening';
+                            setAiAvatarState('listening');
+                            return;
+                        }
 
-            const cleanup = () => {
-                document.getElementById('startBtn').disabled = false;
-                document.getElementById('stopBtn').disabled = true;
-                document.getElementById('micStatus').innerHTML = '<span class="status-dot"></span> Inactive';
-                setAiAvatarState('inactive');
-                if (processor) { processor.disconnect(); processor = null; }
-                if (audioContext) { audioContext.close(); audioContext = null; }
-                if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-            };
+                        // Log textual responses
+                        if (event.data.startsWith("Bot:")) {
+                            log(event.data.substring(4).trim(), 'bot');
+                        } else if (event.data.startsWith("You (Voice):") || event.data.startsWith("You (Text):")) {
+                            const userText = event.data.split(":", 2)[1].trim();
+                            log(userText, 'user');
+                        } else {
+                            log(event.data, 'meta');
+                        }
 
-            document.getElementById('stopBtn').onclick = () => { if(ws) ws.close(); };
+                    } else if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+                        sendingAudio = false;
+                        const arrayBuffer = event.data instanceof Blob ? await event.data.arrayBuffer() : event.data;
+                        enqueueAudio(arrayBuffer);
+                        createSpeechExplosion();
+                        sendingAudio = true;
+                    }
+                };
 
-            document.getElementById('sendBtn').onclick = () => {
-                const msg = document.getElementById('userMsg').value;
-                if (ws && ws.readyState === WebSocket.OPEN && msg) {
-                    ws.send(msg);
-                    log(msg, 'user');
-                    document.getElementById('userMsg').value = '';
-                }
-            };
+                ws.onclose = () => {
+                    log("🔌 Terminated connection with outbound agent service.");
+                    cleanup();
+                };
 
-            document.getElementById('userMsg').onkeypress = (e) => {
-                if (e.key === 'Enter') document.getElementById('sendBtn').click();
-            };
+            } catch (err) {
+                log(`❌ MIC ERROR: ${err.message}`);
+            }
+        };
 
-            document.getElementById('speedSlider').oninput = (e) => {
-                const val = parseFloat(e.target.value);
-                document.getElementById('speedValue').innerText = val.toFixed(1) + 'x';
-                const rateInt = Math.round((val - 1.0) * 100);
-                const rateStr = (rateInt >= 0 ? '+' : '') + rateInt + '%';
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: "control", speechRate: rateStr }));
-                }
-            };
-        </script>
-    </body>
+        const cleanup = () => {
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('micStatus').innerHTML = '<span class="status-dot"></span> Inactive';
+            setAiAvatarState('inactive');
+            if (processor) { processor.disconnect(); processor = null; }
+            if (audioContext) { audioContext.close(); audioContext = null; }
+            if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+        };
+
+        document.getElementById('stopBtn').onclick = () => { if (ws) ws.close(); };
+
+        document.getElementById('sendBtn').onclick = () => {
+            const msg = document.getElementById('userMsg').value;
+            if (ws && ws.readyState === WebSocket.OPEN && msg) {
+                ws.send(msg);
+                log(msg, 'user');
+                document.getElementById('userMsg').value = '';
+            }
+        };
+
+        document.getElementById('userMsg').onkeypress = (e) => {
+            if (e.key === 'Enter') document.getElementById('sendBtn').click();
+        };
+
+        document.getElementById('speedSlider').oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('speedValue').innerText = val.toFixed(1) + 'x';
+            const rateInt = Math.round((val - 1.0) * 100);
+            const rateStr = (rateInt >= 0 ? '+' : '') + rateInt + '%';
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "control", speechRate: rateStr }));
+            }
+        };
+    </script>
+</body>
+
 </html>
