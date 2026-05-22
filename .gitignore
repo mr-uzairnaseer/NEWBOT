@@ -1,0 +1,33 @@
+# Python Virtual Environment
+venv/
+.venv/
+ENV/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Environment Secrets
+.env
+.env.*
+
+# Large Vosk Models and Archives
+*.zip
+*.tar.gz
+*.tgz
+vosk-model-*/
+en_US-lessac-low.onnx
+en_US-lessac-low.onnx.json
+
+# Text-to-Speech Audio Cache
+tts_cache/
+
+# Local IDEs / System Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

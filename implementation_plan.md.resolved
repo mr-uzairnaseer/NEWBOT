@@ -1,0 +1,92 @@
+# Custom In-House AI Voice Bot Implementation Plan
+
+This document outlines the technical architecture and implementation strategy for building a highly scalable, rock-solid AI Voice Bot backend completely **in-house**. This system relies 100% on open-source models running on your own servers, ensuring zero external API dependencies, maximum privacy, and complete customization for your Vicidial/Asterisk integration.
+
+## User Review Required
+
+> [!IMPORTANT]
+> Please review the updated **In-House Technology Stack**. Because we are self-hosting everything, achieving ultra-low latency requires efficient model serving. We have selected the fastest, most lightweight open-source models available. Let me know if you are ready to approve this so we can begin building.
+
+---
+
+## 1. Architecture Overview
+
+The backend is an **event-driven WebSocket server** that acts as the central orchestrator. It streams audio to and from Asterisk, passing it through local AI inference engines.
+
+### The Real-Time Pipeline:
+1. **Audio Ingestion:** Asterisk streams raw audio (PCMU 8000Hz) to the Python WebSocket server.
+2. **Local STT (Speech-to-Text):** The audio stream is chunked and transcribed locally in real-time.
+3. **Local LLM (Logic):** The text is fed into a locally hosted language model to determine if the lead is qualified.
+4. **Local TTS (Text-to-Speech):** The LLM's response is converted to audio by a local, ultra-fast TTS engine.
+5. **Audio Output:** Audio is streamed back to Asterisk.
+6. **Action Execution:** The bot triggers an Asterisk AMI/AGI command to transfer the call to an agent or drop it.
+
+---
+
+## 2. 100% Open-Source Technology Stack
+
+To meet your requirements of being lightweight, extremely powerful, and self-hosted with high concurrency, we will use the following tools:
+
+### Core Orchestrator
+*   **Language & Framework:** **Python with FastAPI**. Highly asynchronous, perfect for handling hundreds of concurrent WebSockets efficiently.
+*   **Audio Processing:** `numpy` and standard Python audio libraries for handling fast memory buffering.
+
+### Self-Hosted AI Inference (The "Brain" & Voice)
+*   **Speech-to-Text (STT):** **Faster-Whisper**. 
+    *   *Why:* It uses CTranslate2, making it up to 4x faster than standard OpenAI Whisper while using significantly less memory. It can stream transcriptions locally with very low latency.
+*   **Language Model (LLM):** **vLLM hosting Llama-3-8B-Instruct** (or Phi-3-Mini).
+    *   *Why:* vLLM is a high-throughput, memory-efficient serving engine. Running a small, quantized model like Llama-3-8B ensures blazing-fast responses and minimal resource hogging, leaving room for hundreds of concurrent calls.
+*   **Text-to-Speech (TTS):** **Piper TTS**.
+    *   *Why:* Piper is designed specifically for ultra-fast, local voice generation (originally for Raspberry Pi/Edge devices). It generates audio faster than real-time on CPU, meaning it scales incredibly well on powerful servers without needing massive GPU clusters.
+
+---
+
+## 3. Step-by-Step Implementation Strategy
+
+We will build this iteratively, ensuring each component is lightweight and fast before moving to the next.
+
+### Phase 1: The Core Async Server
+*   Setup a FastAPI project structure.
+*   Implement the WebSocket endpoint to receive and send audio chunks asynchronously.
+*   Build the audio buffering mechanism.
+
+### Phase 2: Local AI Model Integration
+*   Integrate Faster-Whisper for real-time local transcription of the audio buffer.
+*   Integrate Piper TTS locally to convert text back into raw audio streams.
+*   *Verification:* Speak into a test client, see the text, and hear Piper speak a hardcoded response instantly.
+
+### Phase 3: The Conversational Brain
+*   Connect the orchestrator to your local vLLM instance.
+*   Implement strict system prompting (e.g., "Ask if they are over 65. Output [TRANSFER] if yes, [DROP] if no").
+*   Implement conversation state management (remembering what was said during the call).
+
+### Phase 4: Integration Prep & Load Testing
+*   Expose endpoints for campaign management (setting different prompts for different campaigns).
+*   Create a simulated multi-call test to benchmark CPU/GPU usage with your local hardware.
+
+---
+
+## 4. Integration with Asterisk/Vicidial
+
+Once the standalone bot is fast and stable:
+1.  **Audio Link:** Use Asterisk `AudioSocket` or `EAGI` to forward SIP audio to our FastAPI server.
+2.  **Transfers:** The bot will utilize the Asterisk Manager Interface (AMI) via a Python library like `panoramisk` to execute Dial/Transfer commands to your agent queues when a lead is qualified.
+
+## Verification & Mocking (Testing Without a Dialer)
+
+Since you do not have access to the dialers right now, we will build a **Mock Dialer** ecosystem alongside the bot. This allows you to verify the bot's logic, latency, and voice quality end-to-end, and provides a working reference for the team doing the final Asterisk integration.
+
+### 1. The Python Mock Dialer (`mock_dialer.py`)
+We will create a standalone Python script that mimics exactly what Asterisk will do. 
+*   **How it works:** You run the script in your terminal. It will connect to the bot's WebSocket server, capture your computer's microphone, convert your voice to the telecom standard (8000Hz, u-law), and stream it to the bot. It will simultaneously receive the bot's audio and play it through your speakers.
+*   **Why this is useful:** The integration team can literally look at the code inside `mock_dialer.py` to see exactly what binary formats and JSON payloads the Asterisk server needs to send to the bot.
+
+### 2. Browser-Based Testing Interface
+We will include a lightweight HTML/JavaScript page hosted directly by the FastAPI server.
+*   **How it works:** You open `http://localhost:8000/test` in your browser. You click "Start Call", and speak into your browser. The browser streams the audio to the backend via WebSockets.
+*   **Why this is useful:** This gives non-technical stakeholders (or you) an easy visual interface to chat with the bot, see the live text transcription, and see the exact moment the bot decides to output a `[TRANSFER]` or `[DROP]` command without installing any software.
+
+### 3. Automated Audio File Streaming
+For load testing and automated checks, we will create a script that takes a pre-recorded `.wav` file (e.g., an audio recording of a customer saying "I am 68 years old") and streams it to the server to verify the bot always replies correctly and issues the transfer command.
+
+**If this entire plan and the mock testing strategy look good to you, please give the approval and we will begin building the core components!**
