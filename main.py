@@ -668,102 +668,107 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         has_age = any(char.isdigit() for char in last_user_msg) or any(w in last_user_msg.lower() for w in age_keywords)
         digits = re.findall(r"\d+", last_user_msg)
 
-        # Precise objection categorizations to act exactly like a real human
-        is_objection = any(w in last_user_msg for w in ["stop calling", "dont call", "don't call", "do not call", "remove me", "please stop", "bothering", "who are you", "who is this", "what is your name", "your name", "what company", "who is calling", "who is emily", "why are you calling", "why calling", "what is this about", "what is the reason", "why do you want", "reason for this", "scam", "fake", "legit", "real person", "are you a robot", "robot", "artificial", "benefit", "benefits", "what do you offer", "what do i get", "what are they", "what benefit", "what benefits", "qualify for", "what do i qualify", "food card", "flex card", "cash back", "ssn", "social security"])
+        is_dnc = any(w in last_user_msg for w in ["stop calling", "dont call", "don't call", "do not call", "remove me", "please stop", "bothering"])
+        is_identity = any(w in last_user_msg for w in ["who are you", "who is this", "what is your name", "your name", "what company", "who is calling", "who is emily", "i don't know you", "dont know you"])
+        is_why = any(w in last_user_msg for w in ["why are you calling", "why calling", "what is this about", "what is the reason", "why do you want", "reason for this"])
+        is_scam = any(w in last_user_msg for w in ["scam", "fake", "legit", "real person", "are you a robot", "robot", "artificial"])
+        is_benefits = any(w in last_user_msg for w in ["benefit", "benefits", "what do you offer", "what do i get", "what are they", "what benefit", "what benefits", "qualify for", "what do i qualify", "food card", "flex card", "cash back"])
+        is_ssn = any(w in last_user_msg for w in ["ssn", "social security"])
         is_clarification = any(w in last_user_msg for w in ["understand", "repeat", "hear", "what did you say", "say again", "what was that", "pardon", "what do you mean", "slow down"])
 
-        use_local_router = False
+        use_local_router = True
         local_response = ""
 
-        if active_step == 1:
-            if is_yes or is_no or is_objection or is_clarification or is_unsure:
-                use_local_router = True
-        elif active_step == 2:
-            if has_age or is_yes or is_no or is_objection or is_clarification or is_unsure:
-                use_local_router = True
+        # Count attempts dynamically from history
+        step_1_attempts = sum(1 for m in assistant_msgs if any(w in m.lower() for w in ["part a", "part a and b", "hello", "active right now"]))
+        step_2_attempts = sum(1 for m in assistant_msgs if any(w in m.lower() for w in ["old are you", "age group", "over sixty", "over the age"]))
 
-        def get_dynamic_reassurance(msg: str) -> str:
-            msg_lower = msg.lower()
-            # 1. Do Not Call
-            if any(w in msg_lower for w in ["stop calling", "dont call", "don't call", "do not call", "remove me", "please stop", "bothering"]):
-                return "I am so sorry about that! I will definitely note down to remove your number. Have a wonderful day. [DROP]"
-                
-            # 2. Who is this / Identity / Company name
-            elif any(w in msg_lower for w in ["who are you", "who is this", "what is your name", "your name", "what company", "who is calling", "who is emily"]):
-                already_said = any("my name is emily" in m.lower() or "calling from low insurance cost" in m.lower() for m in assistant_msgs)
-                if already_said:
-                    return "Like I mentioned, my name is Emily and I'm calling from low insurance cost Medicare. We're just helping seniors check if they are eligible for additional benefits. "
-                else:
-                    return "My name is Emily calling from low insurance cost Medicare. We are simply helping seniors review their Medicare options to check if they qualify for additional benefits. "
-                    
-            # 3. Why are you calling / Reason for call
-            elif any(w in msg_lower for w in ["why are you calling", "why calling", "what is this about", "what is the reason", "why do you want", "reason for this"]):
-                already_said = any("reaching out to local seniors" in m.lower() or "reason we are calling" in m.lower() for m in assistant_msgs)
-                if already_said:
-                    return "We are just reaching out to local seniors to help them review if they can get extra benefits added to their plans. "
-                else:
-                    return "We are reaching out to local seniors to help them review if they are eligible for additional benefits like dental, vision, hearing, and food card allowances. "
-                    
-            # 4. Scam / Legitimate / Real person
-            elif any(w in msg_lower for w in ["scam", "fake", "legit", "real person", "are you a robot", "robot", "artificial"]):
-                return "I completely understand your caution! No, I am a real person calling from low insurance cost Medicare. We do not ask for any private credentials or SSN numbers here. We are just checking if you qualify for extra benefits. "
-                
-            # 5. Benefits details
-            elif any(w in msg_lower for w in ["benefit", "benefits", "what do you offer", "what do i get", "what are they", "what benefit", "what benefits", "qualify for", "what do i qualify", "food card", "flex card", "cash back"]):
-                already_said = any("food card" in m.lower() or "300 cash back" in m.lower() for m in assistant_msgs)
-                if already_said:
-                    return "Yes, we are reviewing allowances like the food card, three hundred dollars cash back, and flex cards. "
-                else:
-                    return "We check to see if you qualify for extra benefits like a food card, three hundred dollars cash back, flex cards, and very low premiums. "
-            
-            # SSN
-            elif any(w in msg_lower for w in ["ssn", "social security"]):
-                return "You don't need to give it to me; you can keep your Medicare card handy. "
-                
-            return ""
-
-        if use_local_router:
-            logger.info("Local 0ms latency router triggered! Bypassing remote LLM call.")
-            if is_objection:
-                objection_reassurance = get_dynamic_reassurance(last_user_msg)
-                if objection_reassurance.endswith("[DROP]"):
-                    local_response = objection_reassurance
-                else:
-                    if active_step == 1:
-                        local_response = objection_reassurance + "Do you have Medicare Part A & B?"
-                    else:
-                        local_response = objection_reassurance + "How old are you right now?"
-            elif is_unsure:
-                if active_step == 1:
-                    local_response = "No worries! If you are sixty-five or older, you usually have Part A and B active. Do you receive those benefits, or have a red, white, and blue card?"
-                else:
-                    local_response = "No problem! Are you generally over the age of sixty?"
-            elif is_clarification:
-                if active_step == 1:
-                    local_response = "Sorry! Do you have Medicare Part A and B active?"
-                else:
-                    local_response = "How old are you right now?"
+        def get_step_1_question() -> str:
+            if step_1_attempts <= 1:
+                return "Do you have Medicare Part A & B?"
+            elif step_1_attempts == 2:
+                return "Are both your Part A and Part B active right now?"
             else:
-                if active_step == 1:
-                    if is_yes:
-                        local_response = "Great! How old are you right now?"
-                    elif is_no:
-                        local_response = "I see. You need Medicare Part A and B to qualify. Have a wonderful day! [DROP]"
-                    else:
-                        local_response = "Just to clarify, do you have both Medicare Part A and B?"
+                return "Do you have the red, white, and blue Medicare card handy?"
+
+        def get_step_2_question() -> str:
+            if step_2_attempts <= 1:
+                return "How old are you right now?"
+            elif step_2_attempts == 2:
+                return "What is your age group right now?"
+            else:
+                return "Are you generally over the age of sixty?"
+
+        if is_dnc:
+            local_response = "I am so sorry about that! I will definitely note down to remove your number. Have a wonderful day. [DROP]"
+        elif is_identity:
+            already_said = sum(1 for m in assistant_msgs if any(w in m.lower() for w in ["my name is emily", "calling from low insurance"]))
+            if already_said == 0:
+                reassurance = "My name is Emily calling from low insurance cost Medicare. We are simply helping seniors review their Medicare options. "
+            elif already_said == 1:
+                reassurance = "Like I mentioned, my name is Emily and I am calling from low insurance cost Medicare. We are just helping seniors check their eligibility. "
+            else:
+                reassurance = "I am just a representative from low insurance cost Medicare checking basic eligibility so we don't waste your time. "
+            local_response = reassurance + (get_step_1_question() if active_step == 1 else get_step_2_question())
+        elif is_why:
+            already_said = sum(1 for m in assistant_msgs if any(w in m.lower() for w in ["reaching out to local seniors", "reason we are calling"]))
+            if already_said == 0:
+                reassurance = "We are reaching out to local seniors to help them review if they are eligible for additional benefits like dental, vision, hearing, and food card allowances. "
+            else:
+                reassurance = "We are just checking local seniors' eligibility so they don't miss out on premium benefits like flex cards or cash back. "
+            local_response = reassurance + (get_step_1_question() if active_step == 1 else get_step_2_question())
+        elif is_scam:
+            local_response = "I completely understand your caution! No, I am a live representative calling from low insurance cost Medicare. We never ask for any private SSN numbers on this call. We just want to check: " + (get_step_1_question() if active_step == 1 else get_step_2_question())
+        elif is_benefits:
+            already_said = sum(1 for m in assistant_msgs if any(w in m.lower() for w in ["food card", "flex card", "cash back"]))
+            if already_said == 0:
+                reassurance = "We check for allowances like the food card, three hundred dollars cash back, flex cards, and very low premiums. "
+            else:
+                reassurance = "Those are premium benefits that add on top of standard Medicare to cover dental, vision, and groceries. "
+            local_response = reassurance + (get_step_1_question() if active_step == 1 else get_step_2_question())
+        elif is_ssn:
+            local_response = "You don't need to give it to me! You can keep your card handy and verify it securely in a moment. " + (get_step_1_question() if active_step == 1 else get_step_2_question())
+        elif is_unsure:
+            if active_step == 1:
+                if step_1_attempts <= 1:
+                    local_response = "No worries! If you are sixty-five or older, you usually have Part A and B active. Do you receive those benefits, or have a red, white, and blue card?"
+                elif step_1_attempts == 2:
+                    local_response = "Got it. If you visit a doctor, is that covered by standard Medicare? That usually means both parts are active."
                 else:
-                    if digits:
-                        age_val = int(digits[0])
-                        if age_val >= 60:
-                            local_response = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
-                        else:
-                            local_response = "I see. Unfortunately, you must be sixty or older to qualify. Have a wonderful day! [DROP]"
-                    elif has_age or is_yes:
+                    local_response = "Understood. Let's do this—I can get a specialist on the line who can quickly verify that. How old are you right now?"
+            else:
+                if step_2_attempts <= 1:
+                    local_response = "No problem! We ask because eligibility is based on age. Are you sixty or older right now?"
+                else:
+                    local_response = "Understood. Let's get that specialist on the line right away to verify. [TRANSFER]"
+        elif is_clarification:
+            local_response = "Sorry! Let me repeat: " + (get_step_1_question() if active_step == 1 else get_step_2_question())
+        else:
+            if active_step == 1:
+                if is_yes:
+                    local_response = "Great! " + get_step_2_question()
+                elif is_no:
+                    local_response = "I see. You need Medicare Part A and B to qualify. Have a wonderful day! [DROP]"
+                else:
+                    # Dodging or weird input: try to ask the question in a different way!
+                    local_response = "I appreciate you sharing that. Just to be absolutely sure, " + get_step_1_question()
+            else:
+                if digits:
+                    age_val = int(digits[0])
+                    if age_val >= 60:
                         local_response = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
-                    elif is_no:
-                        local_response = "I see. Unfortunately, you must be sixty or older to qualify. Have a wonderful day! [DROP]"
                     else:
-                        local_response = "I just need a ballpark of your age group. Are you over the age of 60?"
+                        local_response = "I see. Unfortunately, you must be sixty or older to qualify. Have a wonderful day! [DROP]"
+                elif has_age or is_yes:
+                    local_response = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
+                elif is_no:
+                    local_response = "I see. Unfortunately, you must be sixty or older to qualify. Have a wonderful day! [DROP]"
+                else:
+                    # Dodging or weird input: ask age question in a different way or try to transfer if repeatedly dodging
+                    if step_2_attempts <= 1:
+                        local_response = "No worries, you don't have to give the exact age. " + get_step_2_question()
+                    else:
+                        local_response = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
 
             response_text = local_response
             synthesis_queue = asyncio.Queue()
