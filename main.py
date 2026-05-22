@@ -646,7 +646,163 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         interruption_event.clear()
         await websocket.send_text("CTRL:SPEAKING")
 
-        # Immediately send a filler phrase if this is a voice input to mask LLM/TTS latency
+        # ── 0ms Latency Local Dialogue Router ───────────────────────────
+        assistant_msgs = [m["content"] for m in conversation_history if m["role"] == "assistant"]
+        active_step = determine_active_step(assistant_msgs)
+        last_user_msg = text.lower().strip()
+
+        yes_keywords = ["yes", "yeah", "yep", "sure", "correct", "right", "i do", "ok", "okay"]
+        no_keywords = ["no", "dont", "not", "stop", "nevermind"]
+        
+        is_yes = check_keyword(last_user_msg, yes_keywords) or any(w in last_user_msg for w in ["yes", "yeah", "yep", "sure", "correct", "ok", "okay"])
+        is_no = check_keyword(last_user_msg, no_keywords) or "don't" in last_user_msg or "dont" in last_user_msg or "no" in last_user_msg.split()
+
+        age_keywords = [
+            "twenty", "thirty", "forty", "fourty", "fifty", "sixty", "seventy", "eighty", "ninety",
+            "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
+            "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+            "old", "years"
+        ]
+        has_age = any(char.isdigit() for char in last_user_msg) or any(w in last_user_msg.lower() for w in age_keywords)
+        digits = re.findall(r"\d+", last_user_msg)
+
+        is_objection = any(w in last_user_msg for w in ["stop calling", "stop kidding", "don't call", "dont call", "do not call", "stop bothering", "remove me", "please stop", "benefit", "benefits", "what do you offer", "what do i get", "scam", "selling", "who is this", "why are you calling", "who are you", "why", "reason", "personal", "ssn", "social security"])
+        is_clarification = any(w in last_user_msg for w in ["understand", "repeat", "hear", "what did you say", "say again", "what was that", "pardon", "what do you mean", "slow down"])
+
+        use_local_router = False
+        local_response = ""
+
+        if active_step == 1:
+            if is_yes or is_no or is_objection or is_clarification:
+                use_local_router = True
+        elif active_step == 2:
+            if has_age or is_yes or is_no or is_objection or is_clarification:
+                use_local_router = True
+
+        if use_local_router:
+            logger.info("Local 0ms latency router triggered! Bypassing remote LLM call.")
+            if is_objection:
+                objection_reassurance = ""
+                if any(w in last_user_msg for w in ["stop calling", "stop kidding", "don't call", "dont call", "do not call", "stop bothering", "remove me", "please stop"]):
+                    objection_reassurance = "I apology! This is my first time calling. I just want to quickly check if we can help you get extra benefits. "
+                elif any(w in last_user_msg for w in ["benefit", "benefits", "what do you offer", "what do i get", "what are they", "what benefit", "what benefits", "qualify for", "what do i qualify", "food card", "flex card", "cash back", "what is this", "why are you calling", "who are you"]):
+                    objection_reassurance = "We check for a food card, 300 cash back, flex cards, and very low premiums. "
+                elif any(w in last_user_msg for w in ["scam", "selling", "who is this", "why are you calling", "who are you"]):
+                    objection_reassurance = "No worries, we are calling from low insurance cost Medicare to see if you qualify for extra benefits. "
+                elif "why" in last_user_msg or "reason" in last_user_msg or "personal" in last_user_msg:
+                    objection_reassurance = "We ask because Medicare benefits are based on age groups. "
+                elif any(w in last_user_msg for w in ["ssn", "social security", "not giving", "number"]):
+                    objection_reassurance = "You don't need to give it to me; you can keep your Medicare card handy. "
+
+                if active_step == 1:
+                    local_response = objection_reassurance + "Do you have Medicare Part A & B?"
+                else:
+                    local_response = objection_reassurance + "Great! How old are you right now?"
+            elif is_clarification:
+                if active_step == 1:
+                    local_response = "Sorry! Do you have Medicare Part A and B active?"
+                else:
+                    local_response = "Great! How old are you right now?"
+            else:
+                if active_step == 1:
+                    if is_yes:
+                        local_response = "Great! How old are you right now?"
+                    elif is_no:
+                        local_response = "I see. You need Medicare Part A and B to qualify. Have a wonderful day! [DROP]"
+                    else:
+                        local_response = "Just to clarify, do you have both Medicare Part A and B?"
+                else:
+                    if digits:
+                        age_val = int(digits[0])
+                        if age_val >= 60:
+                            local_response = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
+                        else:
+                            local_response = "I see. Unfortunately, you must be sixty or older to qualify. Have a wonderful day! [DROP]"
+                    elif has_age or is_yes:
+                        local_response = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
+                    elif is_no:
+                        local_response = "I see. Unfortunately, you must be sixty or older to qualify. Have a wonderful day! [DROP]"
+                    else:
+                        local_response = "I just need a ballpark of your age group. Are you over the age of 60?"
+
+            response_text = local_response
+            synthesis_queue = asyncio.Queue()
+            sentence_chunks_sent = 0
+
+            async def synthesis_worker():
+                nonlocal sentence_chunks_sent
+                while True:
+                    sentence = await synthesis_queue.get()
+                    if sentence is None:
+                        synthesis_queue.task_done()
+                        break
+                    try:
+                        if websocket.client_state == WebSocketState.DISCONNECTED:
+                            break
+                        if interruption_event.is_set():
+                            break
+                        clean = sentence.replace("[TRANSFER]", "").replace("[DROP]", "").strip()
+                        if clean:
+                            t_chunk = time.perf_counter()
+                            audio = await synthesize_speech(clean, rate=speech_rate)
+                            if audio:
+                                if websocket.client_state == WebSocketState.DISCONNECTED or interruption_event.is_set():
+                                    break
+                                await websocket.send_bytes(audio)
+                                sentence_chunks_sent += 1
+                                logger.info(f"Sent 0ms local chunk #{sentence_chunks_sent}: '{clean}' in {time.perf_counter()-t_chunk:.2f}s")
+                    except Exception as e:
+                        logger.error(f"Error in local synthesis worker: {e}")
+                    finally:
+                        synthesis_queue.task_done()
+
+            worker_task = asyncio.create_task(synthesis_worker())
+            sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', response_text) if s.strip()]
+            for sentence in sentences:
+                await synthesis_queue.put(sentence)
+            await synthesis_queue.put(None)
+            await worker_task
+
+            # Complete lifecycle
+            playback_done_event.clear()
+            try:
+                done, pending = await asyncio.wait(
+                    [
+                        asyncio.create_task(playback_done_event.wait()),
+                        asyncio.create_task(interruption_event.wait())
+                    ],
+                    return_when=asyncio.FIRST_COMPLETED,
+                    timeout=15.0
+                )
+                for task in pending:
+                    task.cancel()
+            except asyncio.TimeoutError:
+                logger.warning("Playback done timeout, resuming")
+
+            if interruption_event.is_set():
+                response_text = response_text + " [Interrupted]"
+                logger.info("Utterance interrupted by user.")
+                
+            conversation_history.append({"role": "assistant", "content": response_text})
+            await websocket.send_text(f"Bot: {response_text}")
+            
+            if is_bot_speaking:
+                is_bot_speaking = False
+                await websocket.send_text("CTRL:LISTENING")
+
+            t_end = time.perf_counter()
+            logger.info(f"Total response pipeline (Local 0ms Router) took {t_end - t_start:.2f}s")
+            
+            if "[TRANSFER]" in response_text or "[DROP]" in response_text:
+                logger.info(f"Action triggered: {response_text}")
+                await asyncio.sleep(3)
+                try:
+                    await websocket.close()
+                except:
+                    pass
+            return response_text
+
+        # Else, fall back to remote OpenRouter LLM stream if they say something custom...
         if from_voice:
             asyncio.create_task(send_filler(text))
 
