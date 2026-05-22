@@ -66,75 +66,32 @@ llm_client = AsyncOpenAI(
 )
 
 SYSTEM_PROMPT = """You are a highly skilled, warm, and professional outbound call representative named emily calling from "low insurance cost Medicare".
-Your absolute, singular goal is to guide the user step-by-step through the 14 lead qualification steps below. You MUST be extremely persistent, polite, and relentless. Never offer to transfer or drop the call early on vague answers, objections, or confusion. Keep pushing for the answers to the current step's question!
+Your absolute, singular goal is to guide the user step-by-step through the 2 lead qualification steps below. You MUST be extremely persistent, polite, and direct. Keep your responses extremely short, conversational, and human-like. Keep tenses short and to the point.
 
 CONVERSATIONAL TONE & ACTIVE LISTENING GUIDELINES:
 1. Speak naturally like a highly trained human agent. Keep responses warm, engaging, and empathetic.
-2. Avoid generic active listening fillers (like "hmm", "sure", "right", "alright", "okay") unless absolutely necessary to comfort the customer. Answer directly.
-3. Keep responses concise, clear, and professional. Never sound robotic or dump dry bullet lists.
-4. When the user speaks, you must understand their context and respond politely and concisely to get them back to the question.
+2. Keep responses extremely concise—ideally one short sentence! Never sound robotic or dump dry lists.
+3. When the user speaks, you must understand their context, address it in a brief, human way, and immediately ask/re-ask the current question.
 
 CRITICAL RULES FOR STATE MANAGEMENT:
-1. Follow the script step-by-step in sequence. Do NOT skip steps or jump ahead.
+1. Follow the steps step-by-step in sequence. Do NOT skip steps or jump ahead.
 2. Keep each response focused strictly on the current step and question.
 3. If the user doesn't say a clear answer, try to comfort the client and politely ask the question again in some other way.
 4. Do NOT dump dry labels or helper annotations to the user.
-5. NEVER offer to transfer or drop early unless specified by the step criteria (like disqualified Supplement/Nursing Home/VA/Tricare benefits). Always pivot back to asking the current step's question.
+5. NEVER offer to transfer or drop early unless specified by the step criteria.
 
 BENEFITS REASSURANCE:
 - If the user asks what benefits are offered, what they qualify for, or why we are calling, list these benefits: "food card, 300 dollars cash back, flex cards, and a very low premium." After listing them, politely pivot back to the active step's question.
 
-MEDICARE 14-STEP OUTBOUND SCRIPT:
+MEDICARE 2-STEP OUTBOUND SCRIPT:
 
 [STEP 1: GREETING & Q1]
 - Question: "Hello! Hi, my name is emily calling you from low insurance cost Medicare. Do you have Medicare Part A & B?"
 - Goal: Must be Yes. If No, politely drop and output '[DROP]'.
 
 [STEP 2: Q2 (Age Check)]
-- Question: "You sounds pretty young over the phone call how old are you right now?"
-- Goal: Capture age. If they refuse, reassure and check if they are over 60.
-
-[STEP 3: Coverage Check]
-- Question: "Have you updated your coverage recently?"
-
-[STEP 4: Plan Type Check]
-- Question: "Do you have a Medicare Advantage plan or a Supplement plan?"
-- Goal: If Supplement, politely drop and output '[DROP]'. Advantage plan is qualified.
-
-[STEP 5: Decision Maker Check]
-- Question: "Do you make your own healthcare decisions?"
-- Goal: If No (someone else decides), politely drop and output '[DROP]'.
-
-[STEP 6: Nursing Home Check]
-- Question: "Do you live in a nursing home or assisted living facility?"
-- Goal: If Yes, politely drop and output '[DROP]'.
-
-[STEP 7: Zip Code]
-- Question: "What is your zip code?"
-
-[STEP 8: VA/Tricare Check]
-- Question: "Do you receive VA or Tricare benefits?"
-- Goal: If Yes, politely drop and output '[DROP]'.
-
-[STEP 9: Medicaid Check]
-- Question: "Do you get Medicaid or any extra help from the state?"
-
-[STEP 10: Important Benefits]
-- Question: "Which benefits are most important to you? Is it dental, vision, hearing, or maybe a food card?"
-
-[STEP 11: Card Handy]
-- Question: "Do you have your red, white, and blue Medicare card handy?"
-
-[STEP 12: Specialist Prep]
-- Question: "I am going to connect you to a specialist who will help you find the best plans. Is that okay?"
-- Goal: If No/Refuse, politely drop and output '[DROP]'.
-
-[STEP 13: Name Check]
-- Question: "What is your first and last name as it appears on your Medicare card?"
-
-[STEP 14: Final Permission & Transfer]
-- Question: "Do I have your permission to connect you now?"
-- Goal: If Yes, politely say goodbye and transfer by outputting '[TRANSFER]'. If No, politely drop and output '[DROP]'.
+- Question: "Great! How old are you right now?"
+- Goal: Capture age. If they are 60 or older, politely transfer them to a specialist and output '[TRANSFER]'. If they are under 60, politely drop and output '[DROP]'.
 """
 
 
@@ -520,31 +477,7 @@ def determine_active_step(assistant_msgs: list[str]) -> int:
     """
     for msg in reversed(assistant_msgs):
         msg_lower = msg.lower()
-        if "permission" in msg_lower or "connect you now" in msg_lower:
-            return 14
-        elif "first and last name" in msg_lower or "your name as it appears" in msg_lower:
-            return 13
-        elif "specialist who will help" in msg_lower or "specialist prep" in msg_lower:
-            return 12
-        elif "card handy" in msg_lower or "red, white, and blue" in msg_lower:
-            return 11
-        elif "most important to you" in msg_lower or "dental, vision, hearing" in msg_lower:
-            return 10
-        elif "medicaid" in msg_lower or "extra help from the state" in msg_lower:
-            return 9
-        elif "va or tricare" in msg_lower:
-            return 8
-        elif "zip code" in msg_lower:
-            return 7
-        elif "nursing home" in msg_lower or "assisted living" in msg_lower:
-            return 6
-        elif "healthcare decisions" in msg_lower or "own decisions" in msg_lower:
-            return 5
-        elif "advantage plan or a supplement" in msg_lower or "plan type" in msg_lower:
-            return 4
-        elif "updated your coverage" in msg_lower or "recently updated" in msg_lower:
-            return 3
-        elif "how old are you" in msg_lower or "pretty young" in msg_lower:
+        if "how old are you" in msg_lower or "pretty young" in msg_lower or "age" in msg_lower:
             return 2
         elif "part a & b" in msg_lower or "part a and b" in msg_lower or "hello" in msg_lower:
             return 1
@@ -879,92 +812,35 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 objection_reassurance = get_comfort_phrase("privacy") + "You don't need to give it to me; you can keep your Medicare card handy, and when we connect you to our licensed specialist in a moment, they can verify your details securely. "
 
             # Standard yes/no check helpers
-            yes_keywords = ["yes", "yeah", "yep", "sure", "correct", "right", "i do", "ok", "okay", "fine", "go ahead", "handy", "advantage", "benefit", "own", "self"]
-            no_keywords = ["no", "dont", "not", "stop", "nevermind", "nursing", "assisted", "supplement", "tricare", "va"]
+            yes_keywords = ["yes", "yeah", "yep", "sure", "correct", "right", "i do", "ok", "okay"]
+            no_keywords = ["no", "dont", "not", "stop"]
             
             is_yes = check_keyword(last_user_msg, yes_keywords) or any(w in last_user_msg for w in ["yes", "yeah", "yep", "sure", "correct", "ok", "okay"])
             is_no = check_keyword(last_user_msg, no_keywords) or "don't" in last_user_msg or "dont" in last_user_msg or "no" in last_user_msg.split()
 
-            # Default fallback if we can't match a step
-            response_text = "I'm sorry, I didn't quite catch that. Could you please repeat what you said?"
-            
             if objection_reassurance:
-                # Reset active step or combine reassurance with the active step question
                 if active_step == 1:
-                    response_text = objection_reassurance + "So, do you have Medicare Part A and B?"
-                elif active_step == 2:
-                    response_text = objection_reassurance + "So, how old are you right now?"
-                elif active_step == 3:
-                    response_text = objection_reassurance + "Have you updated your coverage recently?"
-                elif active_step == 4:
-                    response_text = objection_reassurance + "Do you have a Medicare Advantage plan or a Supplement plan?"
-                elif active_step == 5:
-                    response_text = objection_reassurance + "Do you make your own healthcare decisions?"
-                elif active_step == 6:
-                    response_text = objection_reassurance + "Do you live in a nursing home or assisted living facility?"
-                elif active_step == 7:
-                    response_text = objection_reassurance + "What is your zip code?"
-                elif active_step == 8:
-                    response_text = objection_reassurance + "Do you receive VA or Tricare benefits?"
-                elif active_step == 9:
-                    response_text = objection_reassurance + "Do you get Medicaid or any extra help from the state?"
-                elif active_step == 10:
-                    response_text = objection_reassurance + "Which benefits are most important to you? Is it dental, vision, hearing, or maybe a food card?"
-                elif active_step == 11:
-                    response_text = objection_reassurance + "Do you have your red, white, and blue Medicare card handy?"
-                elif active_step == 12:
-                    response_text = objection_reassurance + "I am going to connect you to a specialist who will help you find the best plans. Is that okay?"
-                elif active_step == 13:
-                    response_text = objection_reassurance + "What is your first and last name as it appears on your Medicare card?"
-                elif active_step == 14:
-                    response_text = objection_reassurance + "Do I have your permission to connect you now?"
-                else:
                     response_text = objection_reassurance + "Do you have Medicare Part A & B?"
+                else:
+                    response_text = objection_reassurance + "How old are you right now?"
             else:
                 is_clarification = any(w in last_user_msg for w in ["understand", "repeat", "hear", "what did you say", "say again", "what was that", "pardon", "what do you mean", "slow down"])
                 
                 if is_clarification:
                     if active_step == 1:
-                        response_text = "I apologize if I wasn't clear! Do you have Medicare Part A and B?"
-                    elif active_step == 2:
-                        response_text = "Let me repeat that! I was just wondering, how old are you right now?"
-                    elif active_step == 3:
-                        response_text = "Sorry! I was asking, have you updated your coverage recently?"
-                    elif active_step == 4:
-                        response_text = "Let me repeat: Do you have a Medicare Advantage plan or a Supplement plan?"
-                    elif active_step == 5:
-                        response_text = "I was asking: Do you make your own healthcare decisions?"
-                    elif active_step == 6:
-                        response_text = "Let me repeat: Do you live in a nursing home or assisted living facility?"
-                    elif active_step == 7:
-                        response_text = "I was asking for your local zip code. What is your zip code?"
-                    elif active_step == 8:
-                        response_text = "Sorry, do you receive VA or Tricare benefits?"
-                    elif active_step == 9:
-                        response_text = "I was asking: Do you get Medicaid or any extra help from the state?"
-                    elif active_step == 10:
-                        response_text = "Which benefits are most important to you? Is it dental, vision, hearing, or maybe a food card?"
-                    elif active_step == 11:
-                        response_text = "Do you have your red, white, and blue Medicare card handy?"
-                    elif active_step == 12:
-                        response_text = "Is it okay if I connect you to a specialist who will help you find the best plans?"
-                    elif active_step == 13:
-                        response_text = "What is your first and last name as it appears on your Medicare card?"
-                    elif active_step == 14:
-                        response_text = "Do I have your permission to connect you now?"
+                        response_text = "Sorry! Do you have Medicare Part A and B active?"
                     else:
-                        response_text = "I'm sorry, let me repeat that. Do you have Medicare Part A and B active?"
+                        response_text = "How old are you right now?"
                 else:
-                    # User is answering the question; handle step-by-step logic
                     if active_step == 1:
                         if is_yes:
-                            response_text = "You sounds pretty young over the phone call how old are you right now?"
+                            response_text = "Great! How old are you right now?"
                         elif is_no:
-                            response_text = get_comfort_phrase("empathy") + "Unfortunately, you need Medicare Part A and B to qualify for these additional benefits. Thank you for your time. Goodbye. [DROP]"
+                            response_text = "I see. You need Medicare Part A and B to qualify. Have a wonderful day! [DROP]"
                         else:
-                            response_text = "Just to clarify so I don't give you the wrong info, do you have both Medicare Part A and B active right now?"
-                            
-                    elif active_step == 2:
+                            response_text = "Just to clarify, do you have both Medicare Part A and B?"
+                    else:
+                        # Scan for age
                         age_keywords = [
                             "twenty", "thirty", "forty", "fourty", "fifty", "sixty", "seventy", "eighty", "ninety",
                             "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
@@ -973,71 +849,20 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                         ]
                         has_age = any(char.isdigit() for char in last_user_msg) or any(w in last_user_msg.lower() for w in age_keywords)
                         
-                        if has_age or is_yes:
-                            response_text = "Have you updated your coverage recently?"
-                        else:
-                            response_text = "I just need a general ballpark of your age group so I can check your eligibility. Are you over the age of 60?"
-                            
-                    elif active_step == 3:
-                        response_text = "Do you have a Medicare Advantage plan or a Supplement plan?"
-                        
-                    elif active_step == 4:
-                        if "supplement" in last_user_msg or "supp" in last_user_msg:
-                            response_text = "I see. Typically supplement plans have different guidelines and we are only reviewing Medicare Advantage options today. Thank you for your time. Goodbye. [DROP]"
-                        else:
-                            response_text = "Do you make your own healthcare decisions?"
-                            
-                    elif active_step == 5:
-                        if is_no or "daughter" in last_user_msg or "son" in last_user_msg or "wife" in last_user_msg or "husband" in last_user_msg:
-                            response_text = "Understood. Since you don't make your own healthcare decisions, we would need to speak with your authorized decision maker. Thank you for your time. Goodbye. [DROP]"
-                        else:
-                            response_text = "Do you live in a nursing home or assisted living facility?"
-                            
-                    elif active_step == 6:
-                        if is_yes or "yes" in last_user_msg.split():
-                            response_text = "I understand. Unfortunately, our program is not available for those residing in nursing homes or assisted living facilities. Thank you for your time. Goodbye. [DROP]"
-                        else:
-                            response_text = "What is your zip code?"
-                            
-                    elif active_step == 7:
-                        has_zip = any(char.isdigit() for char in last_user_msg) or len(last_user_msg.strip()) >= 5
-                        if has_zip:
-                            response_text = "Do you receive VA or Tricare benefits?"
-                        else:
-                            response_text = "Could you please tell me your 5-digit zip code so I can check what is active in your county?"
-                            
-                    elif active_step == 8:
-                        if is_yes or "yes" in last_user_msg.split():
-                            response_text = "Ah, since you have VA or Tricare benefits, your coverage is handled differently. Thank you for your time. Goodbye. [DROP]"
-                        else:
-                            response_text = "Do you get Medicaid or any extra help from the state?"
-                            
-                    elif active_step == 9:
-                        response_text = "Which benefits are most important to you? Is it dental, vision, hearing, or maybe a food card?"
-                        
-                    elif active_step == 10:
-                        response_text = "Do you have your red, white, and blue Medicare card handy?"
-                        
-                    elif active_step == 11:
-                        response_text = "I am going to connect you to a specialist who will help you find the best plans. Is that okay?"
-                        
-                    elif active_step == 12:
-                        if is_no:
-                            response_text = get_comfort_phrase("empathy") + "In that case, I will let you go. Thank you for your time and have a wonderful day! [DROP]"
-                        else:
-                            response_text = "What is your first and last name as it appears on your Medicare card?"
-                            
-                    elif active_step == 13:
-                        if len(last_user_msg.strip()) > 3:
-                            response_text = "Do I have your permission to connect you now?"
-                        else:
-                            response_text = "Could you please tell me your first and last name so I can prepare the specialist?"
-                            
-                    elif active_step == 14:
-                        if is_no:
-                            response_text = "No worries, I understand. Thank you for your time. Goodbye. [DROP]"
-                        else:
+                        # Extract digit if present
+                        digits = re.findall(r"\d+", last_user_msg)
+                        if digits:
+                            age_val = int(digits[0])
+                            if age_val >= 60:
+                                response_text = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
+                            else:
+                                response_text = "I see. Unfortunately, you must be sixty or older to qualify. Have a wonderful day! [DROP]"
+                        elif has_age or is_yes:
                             response_text = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
+                        elif is_no:
+                            response_text = "I see. Unfortunately, you must be sixty or older to qualify. Have a wonderful day! [DROP]"
+                        else:
+                            response_text = "I just need a general ballpark of your age group. Are you over the age of 60?"
             
             # Create a queue and worker to pipeline fallback simulated synthesis
             synthesis_queue = asyncio.Queue()
