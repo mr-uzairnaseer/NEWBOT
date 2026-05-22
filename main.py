@@ -770,82 +770,82 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     else:
                         local_response = "Excellent! Let me get that specialist on the line for you right away. [TRANSFER]"
 
-            response_text = local_response
-            synthesis_queue = asyncio.Queue()
-            sentence_chunks_sent = 0
+        response_text = local_response
+        synthesis_queue = asyncio.Queue()
+        sentence_chunks_sent = 0
 
-            async def synthesis_worker():
-                nonlocal sentence_chunks_sent
-                while True:
-                    sentence = await synthesis_queue.get()
-                    if sentence is None:
-                        synthesis_queue.task_done()
-                        break
-                    try:
-                        if websocket.client_state == WebSocketState.DISCONNECTED:
-                            break
-                        if interruption_event.is_set():
-                            break
-                        clean = sentence.replace("[TRANSFER]", "").replace("[DROP]", "").strip()
-                        if clean:
-                            t_chunk = time.perf_counter()
-                            audio = await synthesize_speech(clean, rate=speech_rate)
-                            if audio:
-                                if websocket.client_state == WebSocketState.DISCONNECTED or interruption_event.is_set():
-                                    break
-                                await websocket.send_bytes(audio)
-                                sentence_chunks_sent += 1
-                                logger.info(f"Sent 0ms local chunk #{sentence_chunks_sent}: '{clean}' in {time.perf_counter()-t_chunk:.2f}s")
-                    except Exception as e:
-                        logger.error(f"Error in local synthesis worker: {e}")
-                    finally:
-                        synthesis_queue.task_done()
-
-            worker_task = asyncio.create_task(synthesis_worker())
-            sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', response_text) if s.strip()]
-            for sentence in sentences:
-                await synthesis_queue.put(sentence)
-            await synthesis_queue.put(None)
-            await worker_task
-
-            # Complete lifecycle
-            playback_done_event.clear()
-            try:
-                done, pending = await asyncio.wait(
-                    [
-                        asyncio.create_task(playback_done_event.wait()),
-                        asyncio.create_task(interruption_event.wait())
-                    ],
-                    return_when=asyncio.FIRST_COMPLETED,
-                    timeout=15.0
-                )
-                for task in pending:
-                    task.cancel()
-            except asyncio.TimeoutError:
-                logger.warning("Playback done timeout, resuming")
-
-            if interruption_event.is_set():
-                response_text = response_text + " [Interrupted]"
-                logger.info("Utterance interrupted by user.")
-                
-            conversation_history.append({"role": "assistant", "content": response_text})
-            await websocket.send_text(f"Bot: {response_text}")
-            
-            if is_bot_speaking:
-                is_bot_speaking = False
-                await websocket.send_text("CTRL:LISTENING")
-
-            t_end = time.perf_counter()
-            logger.info(f"Total response pipeline (Local 0ms Router) took {t_end - t_start:.2f}s")
-            
-            if "[TRANSFER]" in response_text or "[DROP]" in response_text:
-                logger.info(f"Action triggered: {response_text}")
-                await asyncio.sleep(3)
+        async def synthesis_worker():
+            nonlocal sentence_chunks_sent
+            while True:
+                sentence = await synthesis_queue.get()
+                if sentence is None:
+                    synthesis_queue.task_done()
+                    break
                 try:
-                    await websocket.close()
-                except:
-                    pass
-            return response_text
+                    if websocket.client_state == WebSocketState.DISCONNECTED:
+                        break
+                    if interruption_event.is_set():
+                        break
+                    clean = sentence.replace("[TRANSFER]", "").replace("[DROP]", "").strip()
+                    if clean:
+                        t_chunk = time.perf_counter()
+                        audio = await synthesize_speech(clean, rate=speech_rate)
+                        if audio:
+                            if websocket.client_state == WebSocketState.DISCONNECTED or interruption_event.is_set():
+                                break
+                            await websocket.send_bytes(audio)
+                            sentence_chunks_sent += 1
+                            logger.info(f"Sent 0ms local chunk #{sentence_chunks_sent}: '{clean}' in {time.perf_counter()-t_chunk:.2f}s")
+                except Exception as e:
+                    logger.error(f"Error in local synthesis worker: {e}")
+                finally:
+                    synthesis_queue.task_done()
+
+        worker_task = asyncio.create_task(synthesis_worker())
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', response_text) if s.strip()]
+        for sentence in sentences:
+            await synthesis_queue.put(sentence)
+        await synthesis_queue.put(None)
+        await worker_task
+
+        # Complete lifecycle
+        playback_done_event.clear()
+        try:
+            done, pending = await asyncio.wait(
+                [
+                    asyncio.create_task(playback_done_event.wait()),
+                    asyncio.create_task(interruption_event.wait())
+                ],
+                return_when=asyncio.FIRST_COMPLETED,
+                timeout=15.0
+            )
+            for task in pending:
+                task.cancel()
+        except asyncio.TimeoutError:
+            logger.warning("Playback done timeout, resuming")
+
+        if interruption_event.is_set():
+            response_text = response_text + " [Interrupted]"
+            logger.info("Utterance interrupted by user.")
+            
+        conversation_history.append({"role": "assistant", "content": response_text})
+        await websocket.send_text(f"Bot: {response_text}")
+        
+        if is_bot_speaking:
+            is_bot_speaking = False
+            await websocket.send_text("CTRL:LISTENING")
+
+        t_end = time.perf_counter()
+        logger.info(f"Total response pipeline (Local 0ms Router) took {t_end - t_start:.2f}s")
+        
+        if "[TRANSFER]" in response_text or "[DROP]" in response_text:
+            logger.info(f"Action triggered: {response_text}")
+            await asyncio.sleep(3)
+            try:
+                await websocket.close()
+            except:
+                pass
+        return response_text
 
         # Else, fall back to remote OpenRouter LLM stream if they say something custom...
         if from_voice:
