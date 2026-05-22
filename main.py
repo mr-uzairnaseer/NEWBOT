@@ -674,7 +674,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         is_scam = any(w in last_user_msg for w in ["scam", "fake", "legit", "real person", "are you a robot", "robot", "artificial"])
         is_benefits = any(w in last_user_msg for w in ["benefit", "benefits", "what do you offer", "what do i get", "what are they", "what benefit", "what benefits", "qualify for", "what do i qualify", "food card", "flex card", "cash back"])
         is_ssn = any(w in last_user_msg for w in ["ssn", "social security"])
-        is_clarification = any(w in last_user_msg for w in ["understand", "repeat", "hear", "what did you say", "say again", "what was that", "pardon", "what do you mean", "slow down"])
+        is_clarification = any(w in last_user_msg for w in ["understand", "repeat", "hear", "what did you say", "say again", "what was that", "pardon", "what do you mean", "slow down"]) or last_user_msg in ["what", "who", "huh", "pardon"]
 
         use_local_router = True
         local_response = ""
