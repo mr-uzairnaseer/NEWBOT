@@ -653,9 +653,11 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
 
         yes_keywords = ["yes", "yeah", "yep", "sure", "correct", "right", "i do", "ok", "okay"]
         no_keywords = ["no", "dont", "not", "stop", "nevermind"]
-        
-        is_yes = check_keyword(last_user_msg, yes_keywords) or any(w in last_user_msg for w in ["yes", "yeah", "yep", "sure", "correct", "ok", "okay"])
-        is_no = check_keyword(last_user_msg, no_keywords) or "don't" in last_user_msg or "dont" in last_user_msg or "no" in last_user_msg.split()
+        unsure_keywords = ["don't know", "dont know", "not sure", "no idea", "maybe", "think so", "not certain", "uncertain"]
+
+        is_unsure = any(w in last_user_msg for w in unsure_keywords)
+        is_yes = (check_keyword(last_user_msg, yes_keywords) or any(w in last_user_msg for w in ["yes", "yeah", "yep", "sure", "correct", "ok", "okay"])) and not is_unsure
+        is_no = (check_keyword(last_user_msg, no_keywords) or "don't" in last_user_msg or "dont" in last_user_msg or "no" in last_user_msg.split()) and not is_unsure
 
         age_keywords = [
             "twenty", "thirty", "forty", "fourty", "fifty", "sixty", "seventy", "eighty", "ninety",
@@ -666,43 +668,81 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         has_age = any(char.isdigit() for char in last_user_msg) or any(w in last_user_msg.lower() for w in age_keywords)
         digits = re.findall(r"\d+", last_user_msg)
 
-        is_objection = any(w in last_user_msg for w in ["stop calling", "stop kidding", "don't call", "dont call", "do not call", "stop bothering", "remove me", "please stop", "benefit", "benefits", "what do you offer", "what do i get", "scam", "selling", "who is this", "why are you calling", "who are you", "why", "reason", "personal", "ssn", "social security"])
+        # Precise objection categorizations to act exactly like a real human
+        is_objection = any(w in last_user_msg for w in ["stop calling", "dont call", "don't call", "do not call", "remove me", "please stop", "bothering", "who are you", "who is this", "what is your name", "your name", "what company", "who is calling", "who is emily", "why are you calling", "why calling", "what is this about", "what is the reason", "why do you want", "reason for this", "scam", "fake", "legit", "real person", "are you a robot", "robot", "artificial", "benefit", "benefits", "what do you offer", "what do i get", "what are they", "what benefit", "what benefits", "qualify for", "what do i qualify", "food card", "flex card", "cash back", "ssn", "social security"])
         is_clarification = any(w in last_user_msg for w in ["understand", "repeat", "hear", "what did you say", "say again", "what was that", "pardon", "what do you mean", "slow down"])
 
         use_local_router = False
         local_response = ""
 
         if active_step == 1:
-            if is_yes or is_no or is_objection or is_clarification:
+            if is_yes or is_no or is_objection or is_clarification or is_unsure:
                 use_local_router = True
         elif active_step == 2:
-            if has_age or is_yes or is_no or is_objection or is_clarification:
+            if has_age or is_yes or is_no or is_objection or is_clarification or is_unsure:
                 use_local_router = True
+
+        def get_dynamic_reassurance(msg: str) -> str:
+            msg_lower = msg.lower()
+            # 1. Do Not Call
+            if any(w in msg_lower for w in ["stop calling", "dont call", "don't call", "do not call", "remove me", "please stop", "bothering"]):
+                return "I am so sorry about that! I will definitely note down to remove your number. Have a wonderful day. [DROP]"
+                
+            # 2. Who is this / Identity / Company name
+            elif any(w in msg_lower for w in ["who are you", "who is this", "what is your name", "your name", "what company", "who is calling", "who is emily"]):
+                already_said = any("my name is emily" in m.lower() or "calling from low insurance cost" in m.lower() for m in assistant_msgs)
+                if already_said:
+                    return "Like I mentioned, my name is Emily and I'm calling from low insurance cost Medicare. We're just helping seniors check if they are eligible for additional benefits. "
+                else:
+                    return "My name is Emily calling from low insurance cost Medicare. We are simply helping seniors review their Medicare options to check if they qualify for additional benefits. "
+                    
+            # 3. Why are you calling / Reason for call
+            elif any(w in msg_lower for w in ["why are you calling", "why calling", "what is this about", "what is the reason", "why do you want", "reason for this"]):
+                already_said = any("reaching out to local seniors" in m.lower() or "reason we are calling" in m.lower() for m in assistant_msgs)
+                if already_said:
+                    return "We are just reaching out to local seniors to help them review if they can get extra benefits added to their plans. "
+                else:
+                    return "We are reaching out to local seniors to help them review if they are eligible for additional benefits like dental, vision, hearing, and food card allowances. "
+                    
+            # 4. Scam / Legitimate / Real person
+            elif any(w in msg_lower for w in ["scam", "fake", "legit", "real person", "are you a robot", "robot", "artificial"]):
+                return "I completely understand your caution! No, I am a real person calling from low insurance cost Medicare. We do not ask for any private credentials or SSN numbers here. We are just checking if you qualify for extra benefits. "
+                
+            # 5. Benefits details
+            elif any(w in msg_lower for w in ["benefit", "benefits", "what do you offer", "what do i get", "what are they", "what benefit", "what benefits", "qualify for", "what do i qualify", "food card", "flex card", "cash back"]):
+                already_said = any("food card" in m.lower() or "300 cash back" in m.lower() for m in assistant_msgs)
+                if already_said:
+                    return "Yes, we are reviewing allowances like the food card, three hundred dollars cash back, and flex cards. "
+                else:
+                    return "We check to see if you qualify for extra benefits like a food card, three hundred dollars cash back, flex cards, and very low premiums. "
+            
+            # SSN
+            elif any(w in msg_lower for w in ["ssn", "social security"]):
+                return "You don't need to give it to me; you can keep your Medicare card handy. "
+                
+            return ""
 
         if use_local_router:
             logger.info("Local 0ms latency router triggered! Bypassing remote LLM call.")
             if is_objection:
-                objection_reassurance = ""
-                if any(w in last_user_msg for w in ["stop calling", "stop kidding", "don't call", "dont call", "do not call", "stop bothering", "remove me", "please stop"]):
-                    objection_reassurance = "I apology! This is my first time calling. I just want to quickly check if we can help you get extra benefits. "
-                elif any(w in last_user_msg for w in ["benefit", "benefits", "what do you offer", "what do i get", "what are they", "what benefit", "what benefits", "qualify for", "what do i qualify", "food card", "flex card", "cash back", "what is this", "why are you calling", "who are you"]):
-                    objection_reassurance = "We check for a food card, 300 cash back, flex cards, and very low premiums. "
-                elif any(w in last_user_msg for w in ["scam", "selling", "who is this", "why are you calling", "who are you"]):
-                    objection_reassurance = "No worries, we are calling from low insurance cost Medicare to see if you qualify for extra benefits. "
-                elif "why" in last_user_msg or "reason" in last_user_msg or "personal" in last_user_msg:
-                    objection_reassurance = "We ask because Medicare benefits are based on age groups. "
-                elif any(w in last_user_msg for w in ["ssn", "social security", "not giving", "number"]):
-                    objection_reassurance = "You don't need to give it to me; you can keep your Medicare card handy. "
-
-                if active_step == 1:
-                    local_response = objection_reassurance + "Do you have Medicare Part A & B?"
+                objection_reassurance = get_dynamic_reassurance(last_user_msg)
+                if objection_reassurance.endswith("[DROP]"):
+                    local_response = objection_reassurance
                 else:
-                    local_response = objection_reassurance + "Great! How old are you right now?"
+                    if active_step == 1:
+                        local_response = objection_reassurance + "Do you have Medicare Part A & B?"
+                    else:
+                        local_response = objection_reassurance + "How old are you right now?"
+            elif is_unsure:
+                if active_step == 1:
+                    local_response = "No worries! If you are sixty-five or older, you usually have Part A and B active. Do you receive those benefits, or have a red, white, and blue card?"
+                else:
+                    local_response = "No problem! Are you generally over the age of sixty?"
             elif is_clarification:
                 if active_step == 1:
                     local_response = "Sorry! Do you have Medicare Part A and B active?"
                 else:
-                    local_response = "Great! How old are you right now?"
+                    local_response = "How old are you right now?"
             else:
                 if active_step == 1:
                     if is_yes:
