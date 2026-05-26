@@ -4,6 +4,7 @@ import sounddevice as sd
 import websockets
 import av
 import io
+import json
 
 WS_URL = "ws://localhost:8080/ws/mock_dialer_01"
 SAMPLE_RATE = 16000
@@ -31,6 +32,12 @@ def decode_mp3_to_pcm16(mp3_bytes: bytes, target_rate: int = 24000) -> bytes:
 async def run():
     print(f"Connecting to {WS_URL}...")
     async with websockets.connect(WS_URL) as ws:
+        print("Connected. Sending configuration...")
+        await ws.send(json.dumps({
+            "type": "config",
+            "sampleRate": 16000,
+            "speechRate": "+20%"
+        }))
         print("Connected. Speak now.")
         loop = asyncio.get_running_loop()
         audio_queue = asyncio.Queue()
@@ -57,6 +64,8 @@ async def run():
                                 audio = np.frombuffer(pcm_data, dtype=np.int16).astype(np.float32) / 32768.0
                                 audio = audio.reshape(-1, 1)
                                 sd.play(audio, samplerate=24000)
+                                sd.wait()
+                                await ws.send("__PLAYBACK_DONE__")
                         else:
                             print(msg)
                             if "[TRANSFER]" in msg or "[DROP]" in msg:
